@@ -4,7 +4,7 @@
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>盈亏平衡分析图表</title>
-    <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
+    <script src='https://code.highcharts.com/highcharts.js'></script>
     <style>
         body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
@@ -25,6 +25,7 @@
             max-width: 1000px;
             margin: 20px auto;
         }
+        /* 其他CSS样式保持不变 */
         h1 {
             text-align: center;
             color: #3a4a6d;
@@ -120,7 +121,7 @@
 </head>
 <body>
     <div class='container'>
-        <h1>盈亏平衡分析图表</h1>
+        <h1>盈亏平衡分析模型</h1>
         
         <div class='input-section'>
             <div class='input-group'>
@@ -139,25 +140,25 @@
         
         <button onclick='calculateAndDraw()'>生成分析图表</button>
         
-        <div class='chart-container'>
-            <canvas id='breakEvenChart'></canvas>
+        <div class='chart-container' id='breakEvenChart'>
+            <!-- Highcharts将在这里渲染 -->
         </div>
         
         <div class='legend'>
             <div class='legend-item'>
-                <div class='legend-color' style='background-color: rgba(255, 99, 132, 0.7);'></div>
+                <div class='legend-color' style='background-color: #FF6384;'></div>
                 <span>总成本</span>
             </div>
             <div class='legend-item'>
-                <div class='legend-color' style='background-color: rgba(54, 162, 235, 0.7);'></div>
+                <div class='legend-color' style='background-color: #36A2EB;'></div>
                 <span>总收入</span>
             </div>
             <div class='legend-item'>
-                <div class='legend-color' style='background-color: rgba(75, 192, 192, 0.7);'></div>
+                <div class='legend-color' style='background-color: #4BC0C0;'></div>
                 <span>固定成本</span>
             </div>
             <div class='legend-item'>
-                <div class='legend-color' style='background-color: rgba(153, 102, 255, 0.7);'></div>
+                <div class='legend-color' style='background-color: #9966FF;'></div>
                 <span>利润/亏损</span>
             </div>
         </div>
@@ -168,7 +169,7 @@
     </div>
 
     <script>
-        let breakEvenChart = null;
+        let chart = null;
         
         function calculateAndDraw() {
             const fixedCost = parseFloat(document.getElementById('fixedCost').value);
@@ -192,133 +193,123 @@
             
             // 为图表准备数据
             const maxUnits = Math.ceil(breakEvenPoint * 2);
+            const step = Math.ceil(maxUnits / 20);
+            
             const units = [];
             const totalRevenue = [];
             const totalCost = [];
             const fixedCostLine = [];
             const profitLoss = [];
             
-            for (let i = 0; i <= maxUnits; i += Math.ceil(maxUnits / 20)) {
+            for (let i = 0; i <= maxUnits; i += step) {
                 units.push(i);
                 const revenue = i * sellingPrice;
                 const cost = fixedCost + (i * variableCost);
                 
-                totalRevenue.push(revenue);
-                totalCost.push(cost);
-                fixedCostLine.push(fixedCost);
-                profitLoss.push(revenue - cost);
+                totalRevenue.push([i, revenue]);
+                totalCost.push([i, cost]);
+                fixedCostLine.push([i, fixedCost]);
+                profitLoss.push([i, revenue - cost]);
             }
             
-            // 绘制图表
-            const ctx = document.getElementById('breakEvenChart').getContext('2d');
-            
-            if (breakEvenChart) {
-                breakEvenChart.destroy();
-            }
-            
-            breakEvenChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: units,
-                    datasets: [
-                        {
-                            label: '总成本',
-                            data: totalCost,
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.1
-                        },
-                        {
-                            label: '总收入',
-                            data: totalRevenue,
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.1
-                        },
-                        {
-                            label: '固定成本',
-                            data: fixedCostLine,
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                            borderWidth: 3,
-                            borderDash: [5, 5],
-                            fill: false
-                        },
-                        {
-                            label: '利润/亏损',
-                            data: profitLoss,
-                            borderColor: 'rgba(153, 102, 255, 1)',
-                            backgroundColor: 'rgba(153, 102, 255, 0.7)',
-                            borderWidth: 3,
-                            fill: false,
-                            tension: 0.1
-                        }
-                    ]
+            // 使用Highcharts绘制图表
+            chart = Highcharts.chart('breakEvenChart', {
+                title: {
+                    text: '盈亏平衡图',
+                    style: {
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        color: '#3a4a6d'
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: '销售数量 (单位)',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                callback: function(value, index, values) {
-                                    return units[index].toLocaleString();
-                                }
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: '金额 (元)',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                callback: function(value, index, values) {
-                                    return value.toLocaleString() + '元';
-                                }
-                            }
+                xAxis: {
+                    title: {
+                        text: '销售数量 (单位)',
+                        style: {
+                            fontWeight: 'bold'
                         }
                     },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': ' + context.raw.toLocaleString() + '元';
-                                }
-                            }
-                        },
-                        annotation: {
-                            annotations: {
-                                breakEvenLine: {
-                                    type: 'line',
-                                    xMin: breakEvenPoint,
-                                    xMax: breakEvenPoint,
-                                    borderColor: 'rgba(255, 0, 0, 0.5)',
-                                    borderWidth: 2,
-                                    borderDash: [5, 5],
-                                    label: {
-                                        content: '盈亏平衡点',
-                                        enabled: true
-                                    }
-                                }
+                    labels: {
+                        formatter: function() {
+                            return this.value.toLocaleString();
+                        }
+                    },
+                    plotLines: [{
+                        value: breakEvenPoint,
+                        color: 'rgba(255, 0, 0, 0.5)',
+                        width: 2,
+                        dashStyle: 'Dash',
+                        label: {
+                            text: '盈亏平衡点',
+                            align: 'center',
+                            style: {
+                                color: 'red',
+                                fontWeight: 'bold'
                             }
                         }
+                    }]
+                },
+                yAxis: {
+                    title: {
+                        text: '金额 (元)',
+                        style: {
+                            fontWeight: 'bold'
+                        }
+                    },
+                    labels: {
+                        formatter: function() {
+                            return this.value.toLocaleString() + '元';
+                        }
                     }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return '<b>' + this.series.name + '</b><br/>' +
+                               '销售数量: ' + this.x.toLocaleString() + ' 单位<br/>' +
+                               '金额: ' + this.y.toLocaleString() + ' 元';
+                    }
+                },
+                legend: {
+                    enabled: false // 使用自定义图例
+                },
+                series: [{
+                    name: '总成本',
+                    data: totalCost,
+                    color: '#FF6384',
+                    lineWidth: 3
+                }, {
+                    name: '总收入',
+                    data: totalRevenue,
+                    color: '#36A2EB',
+                    lineWidth: 3
+                }, {
+                    name: '固定成本',
+                    data: fixedCostLine,
+                    color: '#4BC0C0',
+                    lineWidth: 3,
+                    dashStyle: 'Dash'
+                }, {
+                    name: '利润/亏损',
+                    data: profitLoss,
+                    color: '#9966FF',
+                    lineWidth: 3
+                }],
+                credits: {
+                    enabled: false // 移除Highcharts水印
+                },
+                responsive: {
+                    rules: [{
+                        condition: {
+                            maxWidth: 500
+                        },
+                        chartOptions: {
+                            legend: {
+                                layout: 'horizontal',
+                                align: 'center',
+                                verticalAlign: 'bottom'
+                            }
+                        }
+                    }]
                 }
             });
             

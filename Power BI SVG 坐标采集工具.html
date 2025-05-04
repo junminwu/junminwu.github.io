@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang='zh-CN'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Power BI SVG坐标采集工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            height: 80vh;
+        }
+        .svg-container {
+            flex: 1;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow: auto;
+            position: relative;
+        }
+        .svg-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .svg-dimensions {
+            display: none;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 10;
+        }
+        .table-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 5px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .delete-btn {
+            background-color: #f44336;
+        }
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+        .download-btn {
+            background-color: #2196F3;
+        }
+        .download-btn:hover {
+            background-color: #0b7dda;
+        }
+        .toolbar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .zoom-controls button {
+            padding: 5px 10px;
+            margin: 0 2px;
+        }
+        .zoom-percentage {
+            margin: 0 5px;
+            min-width: 40px;
+            text-align: center;
+        }
+        #svgFile {
+            margin-right: 10px;
+        }
+        .view-toggle {
+            background-color: #9c27b0;
+        }
+        .view-toggle:hover {
+            background-color: #7b1fa2;
+        }
+        #svgCode {
+            width: 100%;
+            height: 100%;
+            font-family: monospace;
+            display: none;
+            white-space: pre;
+            overflow: auto;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        .svg-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+        #svgPreview {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Power BI SVG坐标采集工具</h1>
+    
+    <div class='toolbar'>
+        <input type='file' id='svgFile' accept='image/*'>
+        <div class='zoom-controls'>
+            <button onclick='zoomOut()'>-</button>
+            <span class='zoom-percentage'>100%</span>
+            <button onclick='zoomIn()'>+</button>
+            <button onclick='resetZoom()'>重置大小</button>
+        </div>
+        <button onclick='toggleView()' class='view-toggle' id='viewToggleBtn'>切换到代码视图</button>
+        <button onclick='clearAll()'>清除内容</button>
+        <button class='download-btn' onclick='downloadCSV()'>下载CSV</button>
+    </div>
+    
+    <div class='container'>
+        <div class='svg-container' id='svgDisplay'>
+            <p>请选择图片文件，兼容SVG格式及像素图片格式，工具在本地运行，具有信息保密性。</p>
+            <div id='svgCode'></div>
+        </div>
+        
+        <div class='table-container'>
+            <table id='coordinatesTable'>
+                <thead>
+                    <tr>
+                        <th>坐标名称</th>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id='tableBody'>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let pointCounter = 1;
+        let svgElement = null;
+        let markers = [];
+        let currentScale = 1;
+        let isCodeView = false;
+        let originalSvgContent = '';
+        let dimensionTimeout = null;
+        
+        // 处理文件上传
+        document.getElementById('svgFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // 清空表格数据
+            clearTableData();
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const svgContainer = document.getElementById('svgDisplay');
+                
+                if (file.type === 'image/svg+xml') {
+                    // 处理SVG文件
+                    svgContainer.innerHTML = `
+                        <div class='svg-wrapper'>
+                            <div class='svg-dimensions' id='svgDimensions'></div>
+                            <div class='svg-content' id='svgPreview'>${e.target.result}</div>
+                        </div>
+                        <div id='svgCode'></div>
+                    `;
+                    
+                    svgElement = svgContainer.querySelector('svg');
+                    originalSvgContent = e.target.result;
+                    
+                    // 确保SVG有明确的width和height属性
+                    ensureSvgDimensions();
+                } else {
+                    // 处理其他图片文件，转换为base64并嵌入SVG
+                    const img = new Image();
+                    img.onload = function() {
+                        const svgWidth = img.width;
+                        const svgHeight = img.height;
+                        
+                        const svgContent = `
+                            <svg xmlns='http://www.w3.org/2000/svg' width='${svgWidth}' height='${svgHeight}' viewBox='0 0 ${svgWidth} ${svgHeight}'>
+                                <image href='${e.target.result}' width='${svgWidth}' height='${svgHeight}'/>
+                            </svg>
+                        `;
+                        
+                        svgContainer.innerHTML = `
+                            <div class='svg-wrapper'>
+                                <div class='svg-dimensions' id='svgDimensions'></div>
+                                <div class='svg-content' id='svgPreview'>${svgContent}</div>
+                            </div>
+                            <div id='svgCode'></div>
+                        `;
+                        
+                        // 这里需要等待DOM更新完成后再获取svg元素
+                        setTimeout(() => {
+                            svgElement = svgContainer.querySelector('svg');
+                            originalSvgContent = svgContent;
+                            
+                            if (svgElement) {
+                                svgElement.style.transformOrigin = '0 0';
+                                svgElement.style.transform = 'scale(' + currentScale + ')';
+                                
+                                // 重新绑定点击事件
+                                const svgPreview = document.getElementById('svgPreview');
+                                if (svgPreview) {
+                                    svgPreview.addEventListener('click', handleSvgClick);
+                                }
+                                
+                                // 显示SVG尺寸
+                                updateSvgDimensions();
+                                updateZoomPercentage();
+                            }
+                        }, 0);
+                    };
+                    img.src = e.target.result;
+                }
+                
+                if (svgElement) {
+                    svgElement.style.transformOrigin = '0 0';
+                    svgElement.style.transform = 'scale(' + currentScale + ')';
+                    
+                    // 重新绑定点击事件
+                    const svgPreview = document.getElementById('svgPreview');
+                    if (svgPreview) {
+                        svgPreview.addEventListener('click', handleSvgClick);
+                    }
+                    
+                    // 显示SVG尺寸
+                    updateSvgDimensions();
+                    updateZoomPercentage();
+                }
+                
+                // 重置标记数组和计数器
+                markers = [];
+                pointCounter = 1;
+                
+                // 更新代码视图
+                updateCodeView();
+            };
+            
+            if (file.type === 'image/svg+xml') {
+                reader.readAsText(file);
+            } else {
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // 确保SVG有明确的width和height属性
+        function ensureSvgDimensions() {
+            if (!svgElement) return;
+            
+            // 如果SVG没有width和height属性，从viewBox中获取
+            if (!svgElement.hasAttribute('width') || !svgElement.hasAttribute('height')) {
+                const viewBox = svgElement.getAttribute('viewBox');
+                if (viewBox) {
+                    const parts = viewBox.split(' ');
+                    if (parts.length >= 4) {
+                        const width = parseFloat(parts[2]);
+                        const height = parseFloat(parts[3]);
+                        svgElement.setAttribute('width', width);
+                        svgElement.setAttribute('height', height);
+                    }
+                }
+            }
+            
+            // 如果仍然没有width和height，使用默认值
+            if (!svgElement.hasAttribute('width')) {
+                svgElement.setAttribute('width', '100%');
+            }
+            if (!svgElement.hasAttribute('height')) {
+                svgElement.setAttribute('height', '100%');
+            }
+        }
+        
+        // 清空表格数据
+        function clearTableData() {
+            document.getElementById('tableBody').innerHTML = '';
+            markers = [];
+            pointCounter = 1;
+        }
+        
+        // 切换视图模式
+        function toggleView() {
+            isCodeView = !isCodeView;
+            const svgCode = document.getElementById('svgCode');
+            const svgWrapper = document.querySelector('.svg-wrapper');
+            const viewToggleBtn = document.getElementById('viewToggleBtn');
+            
+            if (isCodeView) {
+                svgWrapper.style.display = 'none';
+                svgCode.style.display = 'block';
+                viewToggleBtn.textContent = '切换到图片视图';
+                updateCodeView();
+            } else {
+                svgWrapper.style.display = 'block';
+                svgCode.style.display = 'none';
+                viewToggleBtn.textContent = '切换到代码视图';
+            }
+        }
+        
+        // 更新代码视图
+        function updateCodeView() {
+            if (!svgElement) return;
+            
+            const svgCode = document.getElementById('svgCode');
+            if (isCodeView) {
+                // 格式化SVG代码并替换双引号为单引号
+                const formattedCode = formatXml(originalSvgContent).replace(/"/g, "'");
+                svgCode.textContent = formattedCode;
+            }
+        }
+        
+        // 简单的XML格式化函数
+        function formatXml(xml) {
+            let formatted = '';
+            let indent = '';
+            const tab = '  ';
+            xml.split(/>\s*</).forEach(function(node) {
+                if (node.match(/^\/\w/)) indent = indent.substring(tab.length);
+                formatted += indent + '<' + node + '>\r\n';
+                if (node.match(/^<?\w[^>]*[^\/]$/)) indent += tab;
+            });
+            return formatted.substring(1, formatted.length-3);
+        }
+        
+        // 更新SVG尺寸显示
+        function updateSvgDimensions() {
+            if (!svgElement) return;
+            
+            let width, height;
+            
+            // 尝试获取width和height属性
+            const widthAttr = svgElement.getAttribute('width');
+            const heightAttr = svgElement.getAttribute('height');
+            
+            if (widthAttr && heightAttr) {
+                // 如果属性是百分比，则使用getBoundingClientRect获取实际像素值
+                if (widthAttr.endsWith('%') || heightAttr.endsWith('%')) {
+                    const rect = svgElement.getBoundingClientRect();
+                    width = rect.width;
+                    height = rect.height;
+                } else {
+                    // 直接解析数值
+                    width = parseFloat(widthAttr);
+                    height = parseFloat(heightAttr);
+                }
+            } else {
+                // 如果没有width和height属性，尝试从viewBox获取
+                const viewBox = svgElement.getAttribute('viewBox');
+                if (viewBox) {
+                    const parts = viewBox.split(' ');
+                    if (parts.length >= 4) {
+                        width = parseFloat(parts[2]);
+                        height = parseFloat(parts[3]);
+                    }
+                }
+            }
+            
+            // 如果仍然无法获取尺寸，使用getBoundingClientRect
+            if (!width || !height) {
+                const rect = svgElement.getBoundingClientRect();
+                width = rect.width;
+                height = rect.height;
+            }
+            
+            const dimensions = document.getElementById('svgDimensions');
+            if (dimensions) {
+                dimensions.textContent = '尺寸: ' + Math.round(width) + ' × ' + Math.round(height);
+                dimensions.style.display = 'block';
+                
+                // 清除之前的定时器
+                if (dimensionTimeout) {
+                    clearTimeout(dimensionTimeout);
+                }
+                
+                // 设置5秒后隐藏尺寸信息
+                dimensionTimeout = setTimeout(() => {
+                    dimensions.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // 更新缩放百分比显示
+        function updateZoomPercentage() {
+            const zoomPercentage = document.querySelector('.zoom-percentage');
+            if (zoomPercentage) {
+                zoomPercentage.textContent = Math.round(currentScale * 100) + '%';
+            }
+        }
+        
+        // 缩放功能
+        function zoomIn() {
+            currentScale *= 1.2;
+            applyZoom();
+        }
+        
+        function zoomOut() {
+            currentScale /= 1.2;
+            applyZoom();
+        }
+        
+        function resetZoom() {
+            currentScale = 1;
+            applyZoom();
+        }
+        
+        function applyZoom() {
+            if (svgElement) {
+                svgElement.style.transform = 'scale(' + currentScale + ')';
+                updateZoomPercentage();
+                updateSvgDimensions();
+            }
+        }
+        
+        // 处理SVG点击事件
+        function handleSvgClick(e) {
+            if (!svgElement) return;
+            
+            // 获取点击位置相对于SVG元素的坐标
+            const rect = svgElement.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / currentScale;
+            const y = (e.clientY - rect.top) / currentScale;
+            
+            // 创建地点名称
+            const locationName = '地点' + pointCounter;
+            
+            // 在点击位置添加一个标记
+            const markerId = addMarkerToSvg(x, y, locationName);
+            
+            // 添加到表格
+            addCoordinateToTable(Math.round(x), Math.round(y), locationName, markerId);
+            
+            // 增加计数器
+            pointCounter++;
+        }
+        
+        // 添加标记到SVG
+        function addMarkerToSvg(x, y, name) {
+            const markerId = 'marker-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', x);
+            circle.setAttribute('cy', y);
+            circle.setAttribute('r', '5');
+            circle.setAttribute('fill', 'red');
+            circle.setAttribute('stroke', 'white');
+            circle.setAttribute('stroke-width', '1');
+            circle.setAttribute('class', 'coordinate-marker');
+            circle.setAttribute('data-marker-id', markerId);
+            
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', x + 10);
+            text.setAttribute('y', y - 10);
+            text.setAttribute('fill', 'black');
+            text.setAttribute('font-size', '12');
+            text.textContent = name;
+            text.setAttribute('class', 'coordinate-marker');
+            text.setAttribute('data-marker-id', markerId);
+            
+            svgElement.appendChild(circle);
+            svgElement.appendChild(text);
+            
+            // 保存标记信息
+            markers.push({
+                id: markerId,
+                x: x,
+                y: y,
+                name: name,
+                circle: circle,
+                text: text
+            });
+            
+            // 更新原始SVG内容
+            originalSvgContent = svgElement.outerHTML;
+            updateCodeView();
+            
+            return markerId;
+        }
+        
+        // 添加坐标到表格
+        function addCoordinateToTable(x, y, name, markerId) {
+            const tableBody = document.getElementById('tableBody');
+            const newRow = document.createElement('tr');
+            
+            newRow.innerHTML = `
+                <td><input type='text' value='${name}' class='name-input' data-marker-id='${markerId}'></td>
+                <td>${x}</td>
+                <td>${y}</td>
+                <td><button class='delete-btn' onclick='deleteRow(this)'>删除</button></td>
+            `;
+            
+            // 添加输入事件监听器
+            const nameInput = newRow.querySelector('.name-input');
+            nameInput.addEventListener('input', function() {
+                updateMarkerName(this.dataset.markerId, this.value);
+            });
+            
+            tableBody.appendChild(newRow);
+        }
+        
+        // 更新标记名称
+        function updateMarkerName(markerId, newName) {
+            const marker = markers.find(m => m.id === markerId);
+            if (marker) {
+                marker.name = newName;
+                marker.text.textContent = newName;
+                
+                // 更新原始SVG内容
+                originalSvgContent = svgElement.outerHTML;
+                updateCodeView();
+            }
+        }
+        
+        // 删除行
+        function deleteRow(button) {
+            const row = button.closest('tr');
+            const markerId = row.querySelector('.name-input').dataset.markerId;
+            
+            // 从SVG中移除对应的标记
+            removeMarkerFromSvg(markerId);
+            
+            // 从数组中移除标记
+            markers = markers.filter(m => m.id !== markerId);
+            
+            // 删除表格行
+            row.remove();
+            
+            // 重新编号地点名称
+            const nameInputs = document.querySelectorAll('.name-input');
+            nameInputs.forEach((input, index) => {
+                if (!input.value.startsWith('地点')) return;
+                const newName = '地点' + (index + 1);
+                input.value = newName;
+                updateMarkerName(input.dataset.markerId, newName);
+            });
+            pointCounter = nameInputs.length + 1;
+        }
+        
+        // 从SVG中移除指定标记
+        function removeMarkerFromSvg(markerId) {
+            const marker = markers.find(m => m.id === markerId);
+            if (marker) {
+                if (marker.circle && marker.circle.parentNode) {
+                    marker.circle.parentNode.removeChild(marker.circle);
+                }
+                if (marker.text && marker.text.parentNode) {
+                    marker.text.parentNode.removeChild(marker.text);
+                }
+                
+                // 更新原始SVG内容
+                originalSvgContent = svgElement.outerHTML;
+                updateCodeView();
+            }
+        }
+        
+        // 清除所有
+        function clearAll() {
+            document.getElementById('tableBody').innerHTML = '';
+            document.getElementById('svgFile').value = '';
+            document.getElementById('svgDisplay').innerHTML = '<p>请选择图片文件</p><div id="svgCode"></div>';
+            pointCounter = 1;
+            svgElement = null;
+            markers = [];
+            currentScale = 1;
+            isCodeView = false;
+            originalSvgContent = '';
+            updateZoomPercentage();
+            
+            // 清除尺寸显示的定时器
+            if (dimensionTimeout) {
+                clearTimeout(dimensionTimeout);
+                dimensionTimeout = null;
+            }
+            
+            // 重置切换按钮文字
+            document.getElementById('viewToggleBtn').textContent = '切换到代码视图';
+        }
+        
+        // 下载CSV
+        function downloadCSV() {
+            const rows = document.querySelectorAll('#tableBody tr');
+            if (rows.length === 0) {
+                alert('没有数据可下载');
+                return;
+            }
+            
+            // 添加UTF-8 BOM头解决中文乱码问题
+            const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+            let csvContent = '坐标名称,X,Y\n';
+            
+            rows.forEach(row => {
+                const name = row.querySelector('.name-input').value;
+                const x = row.cells[1].textContent;
+                const y = row.cells[2].textContent;
+                csvContent += '"' + name + '",' + x + ',' + y + '\n';
+            });
+            
+            const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', '坐标数据.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

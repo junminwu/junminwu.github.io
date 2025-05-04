@@ -4,7 +4,7 @@
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>盈亏平衡分析图表</title>
-    <script src='https://code.highcharts.com/highcharts.js'></script>
+    <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
     <style>
         body {
             font-family: 'Microsoft YaHei', Arial, sans-serif;
@@ -25,7 +25,6 @@
             max-width: 1000px;
             margin: 20px auto;
         }
-        /* 其他CSS样式保持不变 */
         h1 {
             text-align: center;
             color: #3a4a6d;
@@ -121,7 +120,7 @@
 </head>
 <body>
     <div class='container'>
-        <h1>盈亏平衡分析模型</h1>
+        <h1>盈亏平衡分析图表</h1>
         
         <div class='input-section'>
             <div class='input-group'>
@@ -141,7 +140,7 @@
         <button onclick='calculateAndDraw()'>生成分析图表</button>
         
         <div class='chart-container' id='breakEvenChart'>
-            <!-- Highcharts将在这里渲染 -->
+            <!-- Plotly将在这里渲染 -->
         </div>
         
         <div class='legend'>
@@ -169,8 +168,6 @@
     </div>
 
     <script>
-        let chart = null;
-        
         function calculateAndDraw() {
             const fixedCost = parseFloat(document.getElementById('fixedCost').value);
             const variableCost = parseFloat(document.getElementById('variableCost').value);
@@ -206,112 +203,144 @@
                 const revenue = i * sellingPrice;
                 const cost = fixedCost + (i * variableCost);
                 
-                totalRevenue.push([i, revenue]);
-                totalCost.push([i, cost]);
-                fixedCostLine.push([i, fixedCost]);
-                profitLoss.push([i, revenue - cost]);
+                totalRevenue.push(revenue);
+                totalCost.push(cost);
+                fixedCostLine.push(fixedCost);
+                profitLoss.push(revenue - cost);
             }
             
-            // 使用Highcharts绘制图表
-            chart = Highcharts.chart('breakEvenChart', {
+            // 使用Plotly绘制图表
+            const trace1 = {
+                x: units,
+                y: totalCost,
+                mode: 'lines',
+                name: '总成本',
+                line: {
+                    color: '#FF6384',
+                    width: 3
+                }
+            };
+            
+            const trace2 = {
+                x: units,
+                y: totalRevenue,
+                mode: 'lines',
+                name: '总收入',
+                line: {
+                    color: '#36A2EB',
+                    width: 3
+                }
+            };
+            
+            const trace3 = {
+                x: units,
+                y: fixedCostLine,
+                mode: 'lines',
+                name: '固定成本',
+                line: {
+                    color: '#4BC0C0',
+                    width: 3,
+                    dash: 'dash'
+                }
+            };
+            
+            const trace4 = {
+                x: units,
+                y: profitLoss,
+                mode: 'lines',
+                name: '利润/亏损',
+                line: {
+                    color: '#9966FF',
+                    width: 3
+                }
+            };
+            
+            const data = [trace1, trace2, trace3, trace4];
+            
+            const layout = {
                 title: {
-                    text: '盈亏平衡图',
-                    style: {
-                        fontSize: '18px',
-                        fontWeight: 'bold',
+                    text: '盈亏平衡分析',
+                    font: {
+                        size: 18,
                         color: '#3a4a6d'
                     }
                 },
-                xAxis: {
+                showlegend: false, // 使用自定义图例
+                xaxis: {
                     title: {
                         text: '销售数量 (单位)',
-                        style: {
-                            fontWeight: 'bold'
+                        font: {
+                            size: 14,
+                            color: '#3a4a6d'
                         }
                     },
-                    labels: {
-                        formatter: function() {
-                            return this.value.toLocaleString();
-                        }
-                    },
-                    plotLines: [{
-                        value: breakEvenPoint,
-                        color: 'rgba(255, 0, 0, 0.5)',
-                        width: 2,
-                        dashStyle: 'Dash',
-                        label: {
-                            text: '盈亏平衡点',
-                            align: 'center',
-                            style: {
-                                color: 'red',
-                                fontWeight: 'bold'
-                            }
-                        }
-                    }]
+                    tickformat: ',d'
                 },
-                yAxis: {
+                yaxis: {
                     title: {
                         text: '金额 (元)',
-                        style: {
-                            fontWeight: 'bold'
+                        font: {
+                            size: 14,
+                            color: '#3a4a6d'
                         }
                     },
-                    labels: {
-                        formatter: function() {
-                            return this.value.toLocaleString() + '元';
+                    tickformat: ',d',
+                    ticksuffix: '元'
+                },
+                shapes: [
+                    // 添加盈亏平衡点垂直线
+                    {
+                        type: 'line',
+                        x0: breakEvenPoint,
+                        y0: 0,
+                        x1: breakEvenPoint,
+                        y1: breakEvenRevenue,
+                        line: {
+                            color: 'rgba(255, 0, 0, 0.5)',
+                            width: 2,
+                            dash: 'dash'
                         }
                     }
-                },
-                tooltip: {
-                    formatter: function() {
-                        return '<b>' + this.series.name + '</b><br/>' +
-                               '销售数量: ' + this.x.toLocaleString() + ' 单位<br/>' +
-                               '金额: ' + this.y.toLocaleString() + ' 元';
-                    }
-                },
-                legend: {
-                    enabled: false // 使用自定义图例
-                },
-                series: [{
-                    name: '总成本',
-                    data: totalCost,
-                    color: '#FF6384',
-                    lineWidth: 3
-                }, {
-                    name: '总收入',
-                    data: totalRevenue,
-                    color: '#36A2EB',
-                    lineWidth: 3
-                }, {
-                    name: '固定成本',
-                    data: fixedCostLine,
-                    color: '#4BC0C0',
-                    lineWidth: 3,
-                    dashStyle: 'Dash'
-                }, {
-                    name: '利润/亏损',
-                    data: profitLoss,
-                    color: '#9966FF',
-                    lineWidth: 3
-                }],
-                credits: {
-                    enabled: false // 移除Highcharts水印
-                },
-                responsive: {
-                    rules: [{
-                        condition: {
-                            maxWidth: 500
-                        },
-                        chartOptions: {
-                            legend: {
-                                layout: 'horizontal',
-                                align: 'center',
-                                verticalAlign: 'bottom'
-                            }
+                ],
+                annotations: [
+                    // 添加盈亏平衡点标签
+                    {
+                        x: breakEvenPoint,
+                        y: breakEvenRevenue / 2,
+                        xref: 'x',
+                        yref: 'y',
+                        text: '盈亏平衡点',
+                        showarrow: true,
+                        arrowhead: 2,
+                        arrowsize: 1,
+                        arrowwidth: 2,
+                        ax: -40,
+                        ay: -40,
+                        font: {
+                            color: 'red',
+                            size: 12
                         }
-                    }]
-                }
-            });
+                    }
+                ],
+                hovermode: 'closest',
+                margin: {
+                    l: 60,
+                    r: 30,
+                    b: 60,
+                    t: 50,
+                    pad: 4
+                },
+                height: 400
+            };
+            
+            const config = {
+                responsive: true,
+                displayModeBar: true,
+                modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+                displaylogo: false
+            };
+            
+            Plotly.newPlot('breakEvenChart', data, layout, config);
             
             // 显示结果
             const resultsDiv = document.getElementById('results');

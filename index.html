@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>wujunmin</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eaeaea;
+            padding-bottom: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-weight: normal;
+        }
+        
+        .category {
+            margin-bottom: 30px;
+        }
+        
+        .category-title {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .link-list {
+            list-style-type: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        
+        .link-item {
+            background-color: #f9f9f9;
+            border-left: 4px solid #3498db;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .link-item:hover {
+            background-color: #e8f4fc;
+            transform: translateX(5px);
+        }
+        
+        .link-item a {
+            text-decoration: none;
+            color: #2980b9;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .link-item a:hover {
+            color: #1a5a8a;
+        }
+        
+        .link-desc {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #95a5a6;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>wujunmin提供的工具</h1>
+            <p class="subtitle">快速访问常用Power BI网站和工具</p>
+        </header>
+        
+        <div class="category">
+            <h2 class="category-title">Power BI官方</h2>
+            <ul class="link-list">
+                <li class="link-item">
+                    <a href="https://community.powerbi.com/" target="_blank">Power BI 社区</a>
+                    <p class="link-desc">全球Power BI用户集散地</p>
+                </li>
+                <li class="link-item">
+                    <a href="https://www.microsoft.com/zh-cn/download/details.aspx?id=58494" target="_blank">Power BI Desktop</a>
+                    <p class="link-desc">Power BI最新桌面版下载</p>
+                </li>
+                <li class="link-item">
+                    <a href="https://appsource.microsoft.com/zh-cn/marketplace/apps?page=1&product=power-bi-visuals&src=Office" target="_blank">Power BI视觉对象</a>
+                    <p class="link-desc">海量的第三方视觉对象下载</p>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="category">
+            <h2 class="category-title">SVG工具</h2>
+            <ul class="link-list">
+                <li class="link-item">
+                    <a href="https://junminwu.github.io/Power_BI_SVG_XY.html" target="_blank">SVG坐标采集</a>
+                    <p class="link-desc">用于Power BI 地理空间可视化</p>
+                </li>
+                <li class="link-item">
+                    <a href="https://app.powerbi.com/view?r=eyJrIjoiZDk1N2RiMTgtYWMwOC00ZDM3LTliYzQtYzMxYWYzOGVkNmI1IiwidCI6IjI5Y2JkNTY4LTBlOWItNDQ0Zi1iZTA1LTYxNjMyOTAzNjJmZSJ9" target="_blank">Power BI SVG在线图表工具</a>
+                    <p class="link-desc">在线图标、图表自定义</p>
+                </li>
+                <li class="link-item">
+                    <a href="https://t.zsxq.com/06I6mynUz" target="_blank">Power BI SVG图表课程</a>
+                    <p class="link-desc">全球最全面、最深入的SVG自定义图表课程</p>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="category">
+            <h2 class="category-title">找到我</h2>
+            <ul class="link-list">
+                <li class="link-item">
+                    <a href="https://mp.weixin.qq.com/s/ya3RavLg-taDy1pmfbua-Q" target="_blank">微信公众号</a>
+                    <p class="link-desc">wujunmin</p>
+                </li>
+                <li class="link-item">
+                    <a href="https://www.zhihu.com/wujunmin" target="_blank">知乎</a>
+                    <p class="link-desc">zhihu</p>
+                </li>
+                <li class="link-item">
+                    <a href="https://www.bilibili.com/wujunmin" target="_blank">B站</a>
+                    <p class="link-desc">B站</p>
+                </li>
+            </ul>
+        </div>
+        
+
+        
+        <footer>
+            <p>最后更新: 2025年5月</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI SVG 形状提取器</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #95a5a6;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+            padding-top: 20px;
+        }
+        
+        .preview-section {
+            width: 50%;
+            min-width: 500px;
+            padding: 20px;
+            border-right: 1px solid #e0e0e0;
+            min-height: 600px;
+            box-sizing: border-box;
+        }
+        
+        .editor-section {
+            flex: 1;
+            min-width: 400px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        .upload-area {
+            border: 2px dashed #bdc3c7;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        
+        .upload-area:hover {
+            border-color: #3498db;
+        }
+        
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-download {
+            background-color: #27ae60;
+            margin-right: 10px;
+        }
+        
+        .btn-download:hover {
+            background-color: #219653;
+        }
+        
+        .btn-csv {
+            background-color: #e67e22;
+        }
+        
+        .btn-csv:hover {
+            background-color: #d35400;
+        }
+        
+        .table-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: calc(8 * 48px);
+            margin-top: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #2c3e50;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .svg-container {
+            width: 100%;
+            height: 400px;
+            overflow: auto;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+            background-color: white;
+            background-image: 
+                linear-gradient(45deg, #f5f5f5 25%, transparent 25%, transparent 75%, #f5f5f5 75%, #f5f5f5),
+                linear-gradient(45deg, #f5f5f5 25%, transparent 25%, transparent 75%, #f5f5f5 75%, #f5f5f5);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        
+        .svg-container svg {
+            display: block;
+            min-width: 100%;
+            max-width: none;
+        }
+        
+        .download-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        #id-input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+        }
+        
+        .instructions {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 20px;
+        }
+        
+        .shape-code {
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        tr.highlighted {
+            background-color: #ffeb3b !important;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Power BI SVG 形状提取器</h1>
+        <p>将SVG图片中的所有形状提取到表格，在Power BI 用作位置动态标记颜色</p>
+    </div>
+    
+    <div class="container">
+        <div class="preview-section">
+            <h2>SVG 预览</h2>
+            <div class="upload-area" id="upload-area">
+                <p>拖放SVG文件到这里或点击选择按钮</p>
+                <input type="file" id="file-input" accept=".svg" style="display: none;">
+                <button class="btn" id="upload-btn">选择文件</button>
+            </div>
+            <div class="svg-container" id="svg-container">
+                <p style="text-align: center; color: #7f8c8d; margin-top: 180px;">SVG预览将显示在这里</p>
+            </div>
+        </div>
+        
+        <div class="editor-section">
+            <h2>SVG ID编辑器</h2>
+            <div class="instructions">
+                <p><strong>使用说明：</strong> 鼠标悬停在表格行上可高亮SVG中的对应元素，悬停在SVG形状上可高亮表格中的对应行，编辑ID或删除元素后，可下载修改后的SVG文件。</p>
+            </div>
+            <div class="table-container">
+                <table id="elements-table">
+                    <thead>
+                        <tr>
+                            <th>形状代码</th>
+                            <th>形状ID</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="elements-body">
+                        <!-- 动态内容将在这里生成 -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="download-buttons">
+                <button class="btn btn-download" id="download-svg">下载SVG文件</button>
+                <button class="btn btn-csv" id="download-csv">下载CSV表格</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <a href="http://junminwu.github.io/index.html" target="_blank">wujunmin出品</a>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('file-input');
+            const uploadBtn = document.getElementById('upload-btn');
+            const uploadArea = document.getElementById('upload-area');
+            const svgContainer = document.getElementById('svg-container');
+            const elementsBody = document.getElementById('elements-body');
+            const downloadSvgBtn = document.getElementById('download-svg');
+            const downloadCsvBtn = document.getElementById('download-csv');
+            
+            let svgElement = null;
+            let originalSvgContent = '';
+            let elementsData = [];
+            
+            // 上传按钮点击事件
+            uploadBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // 拖放区域事件
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#3498db';
+                uploadArea.style.backgroundColor = '#eaf2f8';
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                uploadArea.style.borderColor = '#bdc3c7';
+                uploadArea.style.backgroundColor = '#f9f9f9';
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#bdc3c7';
+                uploadArea.style.backgroundColor = '#f9f9f9';
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileUpload(e.dataTransfer.files[0]);
+                }
+            });
+            
+            // 文件选择事件
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length) {
+                    handleFileUpload(fileInput.files[0]);
+                }
+            });
+            
+            // 处理文件上传
+            function handleFileUpload(file) {
+                if (!file.name.endsWith('.svg')) {
+                    alert('请上传SVG文件');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    originalSvgContent = e.target.result;
+                    svgContainer.innerHTML = originalSvgContent;
+                    svgElement = svgContainer.querySelector('svg');
+                    
+                    if (!svgElement) {
+                        alert('无法解析SVG内容');
+                        return;
+                    }
+                    
+                    // 分析SVG元素
+                    analyzeSvgElements();
+                    
+                    // 为SVG元素添加鼠标事件
+                    setupSvgHoverEvents();
+                };
+                reader.readAsText(file);
+            }
+            
+            // 分析SVG元素并填充表格
+            function analyzeSvgElements() {
+                elementsData = [];
+                elementsBody.innerHTML = '';
+                
+                if (!svgElement) return;
+                
+                // 获取所有形状元素
+                const shapes = svgElement.querySelectorAll('path, circle, rect, line, ellipse, polygon, polyline');
+                
+                shapes.forEach((shape, index) => {
+                    const elementType = shape.tagName.toLowerCase();
+                    const elementId = shape.id || '';
+                    const elementCode = shape.outerHTML;
+                    
+                    elementsData.push({
+                        element: shape,
+                        type: elementType,
+                        id: elementId,
+                        code: elementCode,
+                        index: index
+                    });
+                    
+                    // 创建表格行
+                    const row = document.createElement('tr');
+                    row.dataset.index = index;
+                    
+                    // 鼠标悬停高亮
+                    row.addEventListener('mouseenter', function() {
+                        highlightShape(shape);
+                    });
+                    
+                    row.addEventListener('mouseleave', function() {
+                        resetHighlight(shape);
+                    });
+                    
+                    // 填充表格内容
+                    row.innerHTML = `
+                        <td class="shape-code" title="${escapeHtml(elementCode)}">${escapeHtml(shortenCode(elementCode))}</td>
+                        <td>
+                            <input type="text" class="id-input" value="${elementId}" 
+                                   data-index="${index}"
+                                   placeholder="输入ID">
+                        </td>
+                        <td><button class="delete-btn" data-index="${index}">删除</button></td>
+                    `;
+                    
+                    elementsBody.appendChild(row);
+                });
+                
+                // 添加ID输入框事件
+                document.querySelectorAll('.id-input').forEach(input => {
+                    input.addEventListener('focus', function() {
+                        const index = parseInt(this.dataset.index);
+                        highlightShape(elementsData[index].element);
+                    });
+                    
+                    input.addEventListener('blur', function() {
+                        const index = parseInt(this.dataset.index);
+                        resetHighlight(elementsData[index].element);
+                        
+                        // 更新ID
+                        const newId = this.value.trim();
+                        elementsData[index].element.id = newId;
+                        elementsData[index].id = newId;
+                    });
+                });
+                
+                // 添加删除按钮事件
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const index = parseInt(this.dataset.index);
+                        deleteShape(index);
+                    });
+                });
+            }
+            
+            // 为SVG元素添加鼠标悬停事件
+            function setupSvgHoverEvents() {
+                if (!svgElement) return;
+                
+                const shapes = svgElement.querySelectorAll('path, circle, rect, line, ellipse, polygon, polyline');
+                
+                shapes.forEach((shape, index) => {
+                    // 为每个形状添加鼠标事件
+                    shape.addEventListener('mouseenter', function() {
+                        // 高亮SVG形状
+                        highlightShape(shape);
+                        
+                        // 高亮对应的表格行
+                        const rows = document.querySelectorAll('#elements-body tr');
+                        if (index >= 0 && index < rows.length) {
+                            // 移除之前的高亮
+                            document.querySelectorAll('#elements-body tr.highlighted').forEach(row => {
+                                row.classList.remove('highlighted');
+                            });
+                            
+                            // 添加新高亮
+                            rows[index].classList.add('highlighted');
+                            
+                            // 滚动到可见区域
+                            rows[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    });
+                    
+                    shape.addEventListener('mouseleave', function() {
+                        // 取消高亮SVG形状
+                        resetHighlight(shape);
+                        
+                        // 取消高亮表格行
+                        document.querySelectorAll('#elements-body tr.highlighted').forEach(row => {
+                            row.classList.remove('highlighted');
+                        });
+                    });
+                });
+            }
+            
+            // 高亮形状
+            function highlightShape(shape) {
+                shape.style.transition = 'fill 0.3s, stroke 0.3s';
+                
+                if (shape.tagName.toLowerCase() === 'path' || 
+                    shape.tagName.toLowerCase() === 'rect' || 
+                    shape.tagName.toLowerCase() === 'circle' || 
+                    shape.tagName.toLowerCase() === 'ellipse' || 
+                    shape.tagName.toLowerCase() === 'polygon') {
+                    shape.setAttribute('original-fill', shape.getAttribute('fill') || '');
+                    shape.style.fill = 'DeepSkyBlue';
+                }
+                
+                if (shape.tagName.toLowerCase() === 'line' || 
+                    shape.tagName.toLowerCase() === 'polyline') {
+                    shape.setAttribute('original-stroke', shape.getAttribute('stroke') || '');
+                    shape.style.stroke = 'DeepSkyBlue';
+                    shape.style.strokeWidth = '2px';
+                }
+            }
+            
+            // 重置高亮
+            function resetHighlight(shape) {
+                if (shape.tagName.toLowerCase() === 'path' || 
+                    shape.tagName.toLowerCase() === 'rect' || 
+                    shape.tagName.toLowerCase() === 'circle' || 
+                    shape.tagName.toLowerCase() === 'ellipse' || 
+                    shape.tagName.toLowerCase() === 'polygon') {
+                    const originalFill = shape.getAttribute('original-fill');
+                    shape.style.fill = originalFill || '';
+                    if (originalFill === null) {
+                        shape.removeAttribute('fill');
+                    }
+                }
+                
+                if (shape.tagName.toLowerCase() === 'line' || 
+                    shape.tagName.toLowerCase() === 'polyline') {
+                    const originalStroke = shape.getAttribute('original-stroke');
+                    shape.style.stroke = originalStroke || '';
+                    shape.style.strokeWidth = '';
+                    if (originalStroke === null) {
+                        shape.removeAttribute('stroke');
+                    }
+                }
+            }
+            
+            // 删除形状
+            function deleteShape(index) {
+                if (index >= 0 && index < elementsData.length) {
+                    // 从SVG中移除元素
+                    const shape = elementsData[index].element;
+                    shape.parentNode.removeChild(shape);
+                    
+                    // 从数据中移除
+                    elementsData.splice(index, 1);
+                    
+                    // 重新渲染表格
+                    analyzeSvgElements();
+                    
+                    // 重新设置SVG悬停事件
+                    setupSvgHoverEvents();
+                }
+            }
+            
+            // 下载SVG文件
+            downloadSvgBtn.addEventListener('click', function() {
+                if (!svgElement) {
+                    alert('请先上传SVG文件');
+                    return;
+                }
+                
+                // 获取更新后的SVG内容
+                const serializer = new XMLSerializer();
+                const svgStr = serializer.serializeToString(svgElement);
+                const blob = new Blob([svgStr], {type: 'image/svg+xml'});
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'edited-svg.svg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+            
+            // 下载CSV文件 - 修复后的版本
+            downloadCsvBtn.addEventListener('click', function() {
+                if (elementsData.length === 0) {
+                    alert('没有可导出的数据');
+                    return;
+                }
+                
+                // 创建CSV内容
+                let csvContent = [];
+                
+                // 添加UTF-8 BOM解决中文乱码问题
+                csvContent.push("\uFEFF形状代码,形状ID");
+                
+                // 添加数据行
+                elementsData.forEach(item => {
+                    // 转义引号并确保整个字段被引号包围
+                    const code = '"' + item.code.replace(/"/g, '""') + '"';
+                    const id = item.id ? '"' + item.id.replace(/"/g, '""') + '"' : '""';
+                    csvContent.push(code + "," + id);
+                });
+                
+                // 创建Blob对象（指定UTF-8编码）
+                const blob = new Blob([csvContent.join('\n')], {type: 'text/csv;charset=utf-8;'});
+                const url = URL.createObjectURL(blob);
+                
+                // 创建下载链接
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", "svg_elements.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            });
+            
+            // 辅助函数：缩短代码显示
+            function shortenCode(code) {
+                if (code.length > 50) {
+                    return code.substring(0, 50) + '...';
+                }
+                return code;
+            }
+            
+            // 辅助函数：HTML转义
+            function escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+        });
+    </script>
+</body>
+</html>

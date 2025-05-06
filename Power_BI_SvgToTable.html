@@ -539,7 +539,7 @@
                 URL.revokeObjectURL(url);
             });
             
-            // 下载CSV文件 - 修复后的版本
+            // 下载CSV文件
             downloadCsvBtn.addEventListener('click', function() {
                 if (elementsData.length === 0) {
                     alert('没有可导出的数据');
@@ -577,7 +577,7 @@
             // 辅助函数：缩短代码显示
             function shortenCode(code) {
                 if (code.length > 50) {
-                    return code.substring(0, 50) + '...';
+                    return code.substring(0, 35) + '...';
                 }
                 return code;
             }

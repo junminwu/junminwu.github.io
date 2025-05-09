@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双指标帕累托分析工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #95a5a6;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+            padding-top: 20px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #3498db;
+            background-color: #f8f9fa;
+        }
+        .upload-area.active {
+            border-color: #3498db;
+            background-color: #e8f4fc;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .btn-secondary {
+            background-color: #95a5a6;
+        }
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+
+        .charts-container {
+            display: flex;
+            width: 100%;
+            overflow: hidden;
+        }
+        .chart-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 0;
+            height: 500px;
+        }
+        .chart-wrapper:first-child {
+            overflow: hidden;
+        }
+        .chart-wrapper:last-child {
+            overflow: auto;
+        }
+        .chart-container {
+            position: relative;
+            height: 500px;
+            width: 100%;
+        }
+        .table-container {
+            margin-top: 30px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .instructions {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        .file-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>双指标帕累托分析工具</h1>
+            <p>双指标交叉对比- 识别关键因素</p>
+        </div>
+
+        <div class="card">
+            <div class="card-title">数据导入</div>
+            
+            <div class="instructions">
+                <p><strong>使用说明：</strong>请导入包含三列数据的Excel(xlsx)或CSV文件，第一列为维度(如产品名称、客户名称等)，第二、三列为对应数值指标(如销售额、利润等)。系统将自动生成双指标帕累托图。</p>
+            </div>
+            
+            <div id="uploadArea" class="upload-area">
+                <p><i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #95a5a6;"></i></p>
+                <p>点击或拖拽文件到此处导入</p>
+                <p>支持格式: .xlsx, .csv</p>
+                <input type="file" id="fileInput" accept=".xlsx,.csv" style="display: none;">
+                <div id="fileInfo" class="file-info"></div>
+            </div>
+            
+            <div style="text-align: center;">
+                <button id="generateBtn" class="btn hidden">生成帕累托图</button>
+                <button id="resetBtn" class="btn btn-secondary hidden">重置</button>
+            </div>
+        </div>
+
+        <div id="resultSection" class="hidden">
+            <div class="card">
+                <div class="card-title">帕累托分析结果</div>
+
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <div class="chart-container">
+                            <canvas id="paretoChart1"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <div class="chart-container">
+                            <canvas id="paretoChart2"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">数据明细</div>
+                <div class="table-container">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>维度</th>
+                                <th id="value1Header">数值1</th>
+                                <th id="percentage1Header">百分比1</th>
+                                <th id="cumulative1Header">累计百分比1</th>
+                                <th id="value2Header">数值2</th>
+                                <th id="percentage2Header">百分比2</th>
+                                <th id="cumulative2Header">累计百分比2</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <footer>
+        <a href="http://junminwu.github.io" target="_blank">wujunmin出品</a>
+    </footer>
+
+    <script>
+        // 全局变量
+        let uploadedData = [];
+        let paretoChart1 = null;
+        let paretoChart2 = null;
+        let columnTitles = ['维度', '数值1', '数值2']; // 默认列标题
+        
+        // DOM元素
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const generateBtn = document.getElementById('generateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultSection = document.getElementById('resultSection');
+        const tableBody = document.getElementById('tableBody');
+        
+        // 事件监听
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('active');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('active');
+        });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('active');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileUpload();
+            }
+        });
+        fileInput.addEventListener('change', handleFileUpload);
+        generateBtn.addEventListener('click', generateParetoCharts);
+        resetBtn.addEventListener('click', resetTool);
+        
+        // 处理文件上传
+        function handleFileUpload() {
+            const file = fileInput.files[0];
+            if (!file) return;
+            
+            fileInfo.textContent = `已选择文件: ${file.name}`;
+            generateBtn.classList.remove('hidden');
+            resetBtn.classList.remove('hidden');
+            
+            const fileType = file.name.split('.').pop().toLowerCase();
+            
+            if (fileType === 'xlsx') {
+                parseExcelFile(file);
+            } else if (fileType === 'csv') {
+                parseCSVFile(file);
+            } else {
+                alert('请上传.xlsx或.csv格式的文件');
+                resetTool();
+            }
+        }
+        
+        // 解析Excel文件
+        function parseExcelFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                // 获取列标题
+                if (jsonData.length > 0) {
+                    columnTitles = [
+                        jsonData[0][0] || '维度',
+                        jsonData[0][1] || '数值1',
+                        jsonData[0][2] || '数值2'
+                    ];
+                }
+                
+                processData(jsonData);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // 解析CSV文件
+        function parseCSVFile(file) {
+            Papa.parse(file, {
+                complete: function(results) {
+                    // 获取列标题
+                    if (results.data.length > 0) {
+                        columnTitles = [
+                            results.data[0][0] || '维度',
+                            results.data[0][1] || '数值1',
+                            results.data[0][2] || '数值2'
+                        ];
+                    }
+                    processData(results.data);
+                },
+                header: false,
+                skipEmptyLines: true
+            });
+        }
+        
+        // 处理数据
+        function processData(data) {
+            if (data.length < 2) {
+                alert('文件数据不足，请确保至少有两行数据（标题行和数据行）');
+                resetTool();
+                return;
+            }
+            
+            // 从第二行开始处理数据（假设第一行是标题）
+            uploadedData = [];
+            for (let i = 1; i < data.length; i++) {
+                if (data[i].length >= 3) {
+                    const dimension = data[i][0];
+                    const value1 = parseFloat(data[i][1]);
+                    const value2 = parseFloat(data[i][2]);
+                    
+                    if (dimension && !isNaN(value1) && !isNaN(value2)) {
+                        uploadedData.push({
+                            dimension: dimension.toString(),
+                            value1: value1,
+                            value2: value2
+                        });
+                    }
+                }
+            }
+            
+            if (uploadedData.length === 0) {
+                alert('无法解析有效数据，请检查文件格式');
+                resetTool();
+            }
+        }
+        
+        // 生成帕累托图
+        function generateParetoCharts() {
+            if (uploadedData.length === 0) {
+                alert('没有有效数据可生成图表');
+                return;
+            }
+            
+            // 更新表格标题
+            document.getElementById('value1Header').textContent = columnTitles[1];
+            document.getElementById('percentage1Header').textContent = columnTitles[1] + '百分比';
+            document.getElementById('cumulative1Header').textContent = columnTitles[1] + '累计百分比';
+            document.getElementById('value2Header').textContent = columnTitles[2];
+            document.getElementById('percentage2Header').textContent = columnTitles[2] + '百分比';
+            document.getElementById('cumulative2Header').textContent = columnTitles[2] + '累计百分比';
+            
+            // 处理第一个指标数据
+            const data1 = JSON.parse(JSON.stringify(uploadedData));
+            data1.sort((a, b) => b.value1 - a.value1);
+            const total1 = data1.reduce((sum, item) => sum + item.value1, 0);
+            let cumulative1 = 0;
+            for (let i = 0; i < data1.length; i++) {
+                const percentage = (data1[i].value1 / total1) * 100;
+                cumulative1 += percentage;
+                data1[i].percentage1 = percentage;
+                data1[i].cumulativePercentage1 = cumulative1;
+            }
+            
+            // 处理第二个指标数据
+            const data2 = JSON.parse(JSON.stringify(uploadedData));
+            data2.sort((a, b) => b.value2 - a.value2);
+            const total2 = data2.reduce((sum, item) => sum + item.value2, 0);
+            let cumulative2 = 0;
+            for (let i = 0; i < data2.length; i++) {
+                const percentage = (data2[i].value2 / total2) * 100;
+                cumulative2 += percentage;
+                data2[i].percentage2 = percentage;
+                data2[i].cumulativePercentage2 = cumulative2;
+            }
+            
+            // 合并数据用于表格显示（保持维度顺序一致）
+            const mergedData = [];
+            const dimensionOrder = data1.map(item => item.dimension);
+            
+            dimensionOrder.forEach(dim => {
+                const item1 = data1.find(item => item.dimension === dim);
+                const item2 = data2.find(item => item.dimension === dim);
+                
+                if (item1 && item2) {
+                    mergedData.push({
+                        dimension: dim,
+                        value1: item1.value1,
+                        percentage1: item1.percentage1,
+                        cumulativePercentage1: item1.cumulativePercentage1,
+                        value2: item2.value2,
+                        percentage2: item2.percentage2,
+                        cumulativePercentage2: item2.cumulativePercentage2
+                    });
+                }
+            });
+            
+            // 显示结果区域
+            resultSection.classList.remove('hidden');
+            
+            // 更新表格
+            updateDataTable(mergedData);
+            
+            // 绘制图表
+            drawChart1(data1);
+            drawChart2(data2);
+            
+            // 设置同步滚动
+            setupSyncScroll();
+        }
+        
+        // 设置同步滚动
+        function setupSyncScroll() {
+            const chartWrappers = document.querySelectorAll('.chart-wrapper');
+            const leftChart = chartWrappers[0];
+            const rightChart = chartWrappers[1];
+            
+ 
+            rightChart.addEventListener('scroll', function() {
+                leftChart.scrollTop = rightChart.scrollTop;
+            });
+            
+            // 确保两个图表容器高度相同
+            const maxHeight = Math.max(leftChart.scrollHeight, rightChart.scrollHeight);
+            leftChart.style.height = maxHeight + 'px';
+            rightChart.style.height = maxHeight + 'px';
+        }
+        
+        // 更新数据表格
+        function updateDataTable(data) {
+            tableBody.innerHTML = '';
+            
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${item.dimension}</td>
+                    <td>${Math.round(item.value1).toLocaleString()}</td>
+                    <td>${Math.round(item.percentage1)}%</td>
+                    <td>${Math.round(item.cumulativePercentage1)}%</td>
+                    <td>${Math.round(item.value2).toLocaleString()}</td>
+                    <td>${Math.round(item.percentage2)}%</td>
+                    <td>${Math.round(item.cumulativePercentage2)}%</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 绘制第一个图表
+        function drawChart1(data) {
+            const ctx = document.getElementById('paretoChart1').getContext('2d');
+            
+            // 如果已有图表，先销毁
+            if (paretoChart1) {
+                paretoChart1.destroy();
+            }
+            
+            // 准备数据
+            const labels = data.map(item => item.dimension);
+            const values = data.map(item => item.value1);
+            const cumulativePercentages = data.map(item => item.cumulativePercentage1);
+            
+            // 计算最大值用于调整右侧坐标轴
+            const maxValue = Math.max(...values);
+            const maxPercentage = Math.max(...cumulativePercentages);
+            const minPercentage = Math.min(0, ...cumulativePercentages); // 考虑可能有负数
+            
+            // 根据数据量调整图表高度
+            const baseHeight = 500;
+            const minItemHeight = 30;
+            const calculatedHeight = Math.max(baseHeight, labels.length * minItemHeight);
+            document.querySelectorAll('.chart-container')[0].style.height = `${calculatedHeight}px`;
+            
+            paretoChart1 = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        // 折线图数据集放在前面，确保显示在最上层
+                        {
+                            label: columnTitles[1] + '累计百分比',
+                            data: cumulativePercentages,
+                            type: 'line',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                            pointRadius: 4,
+                            xAxisID: 'x1',
+                            order: 1 // 确保折线图在条形图之上
+                        },
+                        // 条形图数据集
+                        {
+                            label: columnTitles[1],
+                            data: values,
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1,
+                            xAxisID: 'x',
+                            order: 2 // 确保条形图在折线图之下
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y', // 纵向条形图
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: columnTitles[1] + '帕累托分析图',
+                            font: {
+                                size: 18
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.datasetIndex === 1) { // 条形图数据
+                                        label += Math.round(context.raw).toLocaleString();
+                                    } else { // 折线图数据
+                                        label += Math.round(context.raw) + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                // 自定义图例顺序，确保折线图在图例中显示在前面
+                                sort: (a, b) => {
+                                    return a.datasetIndex - b.datasetIndex;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: columnTitles[0]
+                            },
+                            ticks: {
+                                // 确保所有标签都显示
+                                autoSkip: false
+                            }
+                        },
+                        x: {
+                            type: 'linear',
+                            display: true,
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: columnTitles[1]
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return Math.round(value).toLocaleString();
+                                }
+                            }
+                        },
+                        x1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'top',
+                            title: {
+                                display: true,
+                                text: columnTitles[1] + '累计百分比 (%)'
+                            },
+                            min: minPercentage,
+                            max: maxPercentage,
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return Math.round(value) + '%';
+                                }
+                            }
+                        }
+                    },
+                    // 添加交互功能
+                    onClick: function(evt, elements) {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const dimension = this.data.labels[index];
+                            highlightBars(dimension);
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 绘制第二个图表
+        function drawChart2(data) {
+            const ctx = document.getElementById('paretoChart2').getContext('2d');
+            
+            // 如果已有图表，先销毁
+            if (paretoChart2) {
+                paretoChart2.destroy();
+            }
+            
+            // 准备数据
+            const labels = data.map(item => item.dimension);
+            const values = data.map(item => item.value2);
+            const cumulativePercentages = data.map(item => item.cumulativePercentage2);
+            
+            // 计算最大值用于调整右侧坐标轴
+            const maxValue = Math.max(...values);
+            const maxPercentage = Math.max(...cumulativePercentages);
+            const minPercentage = Math.min(0, ...cumulativePercentages); // 考虑可能有负数
+            
+            // 根据数据量调整图表高度
+            const baseHeight = 500;
+            const minItemHeight = 30;
+            const calculatedHeight = Math.max(baseHeight, labels.length * minItemHeight);
+            document.querySelectorAll('.chart-container')[1].style.height = `${calculatedHeight}px`;
+            
+            paretoChart2 = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        // 折线图数据集放在前面，确保显示在最上层
+                        {
+                            label: columnTitles[2] + '累计百分比',
+                            data: cumulativePercentages,
+                            type: 'line',
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(255, 159, 64, 1)',
+                            pointRadius: 4,
+                            xAxisID: 'x1',
+                            order: 1 // 确保折线图在条形图之上
+                        },
+                        // 条形图数据集
+                        {
+                            label: columnTitles[2],
+                            data: values,
+                            backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1,
+                            xAxisID: 'x',
+                            order: 2 // 确保条形图在折线图之下
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y', // 纵向条形图
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: columnTitles[2] + '帕累托分析图',
+                            font: {
+                                size: 18
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.datasetIndex === 1) { // 条形图数据
+                                        label += Math.round(context.raw).toLocaleString();
+                                    } else { // 折线图数据
+                                        label += Math.round(context.raw) + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                // 自定义图例顺序，确保折线图在图例中显示在前面
+                                sort: (a, b) => {
+                                    return a.datasetIndex - b.datasetIndex;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: columnTitles[0]
+                            },
+                            ticks: {
+                                // 确保所有标签都显示
+                                autoSkip: false
+                            }
+                        },
+                        x: {
+                            type: 'linear',
+                            display: true,
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: columnTitles[2]
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return Math.round(value).toLocaleString();
+                                }
+                            }
+                        },
+                        x1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'top',
+                            title: {
+                                display: true,
+                                text: columnTitles[2] + '累计百分比 (%)'
+                            },
+                            min: minPercentage,
+                            max: maxPercentage,
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return Math.round(value) + '%';
+                                }
+                            }
+                        }
+                    },
+                    // 添加交互功能
+                    onClick: function(evt, elements) {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const dimension = this.data.labels[index];
+                            highlightBars(dimension);
+                        }
+                    }
+                }
+            });
+        }
+
+        // 高亮显示对应维度的条形
+        function highlightBars(dimension) {
+            // 高亮第一个图表中的条形
+            if (paretoChart1) {
+                const index1 = paretoChart1.data.labels.indexOf(dimension);
+                if (index1 !== -1) {
+                    const originalColor1 = 'rgba(54, 162, 235, 0.7)';
+                    const highlightColor1 = 'tomato';
+                    
+                    // 重置所有条形的颜色
+                    paretoChart1.data.datasets[1].backgroundColor = 
+                        paretoChart1.data.labels.map(() => originalColor1);
+                    
+                    // 高亮选中的条形
+                    paretoChart1.data.datasets[1].backgroundColor[index1] = highlightColor1;
+                    paretoChart1.update();
+                }
+            }
+            
+            // 高亮第二个图表中的条形
+            if (paretoChart2) {
+                const index2 = paretoChart2.data.labels.indexOf(dimension);
+                if (index2 !== -1) {
+                    const originalColor2 = 'rgba(75, 192, 192, 0.7)';
+                    const highlightColor2 = 'tomato';
+                    
+                    // 重置所有条形的颜色
+                    paretoChart2.data.datasets[1].backgroundColor = 
+                        paretoChart2.data.labels.map(() => originalColor2);
+                    
+                    // 高亮选中的条形
+                    paretoChart2.data.datasets[1].backgroundColor[index2] = highlightColor2;
+                    paretoChart2.update();
+                }
+            }
+        }
+
+        // 重置工具
+        function resetTool() {
+            fileInput.value = '';
+            fileInfo.textContent = '';
+            generateBtn.classList.add('hidden');
+            resetBtn.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            tableBody.innerHTML = '';
+            uploadedData = [];
+            columnTitles = ['维度', '数值1', '数值2']; // 重置为默认列标题
+            
+            // 重置表格标题
+            document.getElementById('value1Header').textContent = '数值1';
+            document.getElementById('percentage1Header').textContent = '百分比1';
+            document.getElementById('cumulative1Header').textContent = '累计百分比1';
+            document.getElementById('value2Header').textContent = '数值2';
+            document.getElementById('percentage2Header').textContent = '百分比2';
+            document.getElementById('cumulative2Header').textContent = '累计百分比2';
+            
+            if (paretoChart1) {
+                paretoChart1.destroy();
+                paretoChart1 = null;
+            }
+            if (paretoChart2) {
+                paretoChart2.destroy();
+                paretoChart2 = null;
+            }
+            
+            // 重置图表容器高度
+            document.querySelectorAll('.chart-container').forEach(container => {
+                container.style.height = '500px';
+            });
+        }
+    </script>
+</body>
+</html>

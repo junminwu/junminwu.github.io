@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI SVG 纵向分割线生成器</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --light-gray: #ecf0f1;
+            --medium-gray: #bdc3c7;
+            --dark-gray: #7f8c8d;
+            --white: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: var(--light-gray);
+            color: var(--primary-color);
+            line-height: 1.6;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            font-weight: 600;
+            font-size: 28px;
+            border-bottom: 1px solid var(--medium-gray);
+        }
+        
+        h2 {
+            color: var(--secondary-color);
+            font-size: 20px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .control-panel {
+            background-color: var(--white);
+            border-radius: 6px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            border: 1px solid var(--medium-gray);
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 180px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--secondary-color);
+            font-size: 14px;
+        }
+        
+        select, input[type="range"], input[type="color"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: var(--white);
+            transition: border-color 0.3s;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        input[type="range"] {
+            padding: 0;
+            height: 8px;
+            -webkit-appearance: none;
+            background: var(--medium-gray);
+            border-radius: 4px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .preview-container, .code-container {
+            background-color: var(--white);
+            border-radius: 6px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+            border: 1px solid var(--medium-gray);
+        }
+        
+        .preview-container {
+            text-align: center;
+        }
+        
+        .code-container {
+            position: relative;
+        }
+        
+        .code-area {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-bottom: 10px;
+            font-size: 13px;
+            border: 1px solid #e0e0e0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background-color: var(--accent-color);
+            color: var(--white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .copy-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        svg {
+            border: 1px solid var(--medium-gray);
+            background-color: var(--white);
+            transform: scale(0.33);
+            transform-origin: top center;
+            margin-bottom: -320px;
+        }
+        
+        .svg-container {
+            height: 160px;
+            overflow: hidden;
+        }
+        
+        .range-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 13px;
+            color: var(--dark-gray);
+            min-width: 40px;
+            text-align: right;
+        }
+        
+        .form-footer {
+            width: 100%;
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--dark-gray);
+            text-align: right;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            
+            .control-panel {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .form-group {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Power BI SVG 纵向分割线生成器</h1>
+    
+    <div class="control-panel">
+        <div class="form-group">
+            <label for="lineStyle">线条样式</label>
+            <select id="lineStyle" onchange="updateLine()">
+                <option value="solid">实线</option>
+                <option value="dashed">虚线</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="lineWidth">线条粗细 <span id="widthValue" class="range-value">2px</span></label>
+            <input type="range" id="lineWidth" min="1" max="480" value="100" onchange="updateLine()" oninput="updateLine()">
+        </div>
+        
+        <div class="form-group">
+            <label for="lineColor">线条颜色</label>
+            <input type="color" id="lineColor" value="#3498db" onchange="updateLine()">
+        </div>
+        
+        <div class="form-group">
+            <label for="linePosition">线条位置</label>
+            <select id="linePosition" onchange="updateLine()">
+                <option value="left">靠左</option>
+                <option value="center" selected>居中</option>
+                <option value="right">靠右</option>
+            </select>
+        </div>
+        
+        <div class="form-footer">
+            适用于Power BI表格矩阵分割设计
+        </div>
+    </div>
+    
+    <div class="preview-container">
+        <h2>预览效果</h2>
+        <div class="svg-container">
+            <svg id="svgPreview" width="480" height="480"></svg>
+        </div>
+    </div>
+    
+    <div class="code-container">
+        <h2>SVG代码 (Power BI专用)</h2>
+        <button class="copy-btn" onclick="copyCode()">复制代码</button>
+        <div class="code-area" id="svgCode"></div>
+    </div>
+
+    <script>
+        function updateLine() {
+            const lineStyle = document.getElementById('lineStyle').value;
+            const lineWidth = document.getElementById('lineWidth').value;
+            const lineColor = document.getElementById('lineColor').value;
+            const linePosition = document.getElementById('linePosition').value;
+            
+            document.getElementById('widthValue').textContent = lineWidth + 'px';
+            
+            const svgPreview = document.getElementById('svgPreview');
+            svgPreview.innerHTML = '';
+            
+            // 根据位置设置x坐标
+            let xPos = 240; // 默认居中
+            if (linePosition === 'left') {
+                xPos = 0;
+            } else if (linePosition === 'right') {
+                xPos = 480;
+            }
+            
+            let pathElement;
+            
+            switch(lineStyle) {
+                case 'solid':
+                    pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    pathElement.setAttribute('x1', xPos);
+                    pathElement.setAttribute('y1', '0');
+                    pathElement.setAttribute('x2', xPos);
+                    pathElement.setAttribute('y2', '480');
+                    pathElement.setAttribute('stroke', lineColor);
+                    pathElement.setAttribute('stroke-width', lineWidth);
+                    break;
+                    
+                case 'dashed':
+                    pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    pathElement.setAttribute('x1', xPos);
+                    pathElement.setAttribute('y1', '0');
+                    pathElement.setAttribute('x2', xPos);
+                    pathElement.setAttribute('y2', '480');
+                    pathElement.setAttribute('stroke', lineColor);
+                    pathElement.setAttribute('stroke-width', lineWidth);
+                    pathElement.setAttribute('stroke-dasharray', '30, 30');
+                    break;
+                    
+
+                    
+            }
+            
+            svgPreview.appendChild(pathElement);
+            updateSvgCode();
+        }
+        
+        function updateSvgCode() {
+            const svgPreview = document.getElementById('svgPreview');
+            const svgCode = document.getElementById('svgCode');
+            
+            // 获取SVG内容并格式化
+            let svgContent = svgPreview.outerHTML;
+            
+            // 替换双引号为单引号
+            svgContent = svgContent.replace(/"/g, "'");
+            
+            // 添加命名空间和ID
+            svgContent = svgContent.replace(/<svg/, "<svg class='wujunmin' xmlns='http://www.w3.org/2000/svg'");
+            
+            // 添加前缀
+            svgContent = "data:image/svg+xml;utf8," + svgContent;
+            
+            // 美化SVG代码
+            svgContent = svgContent
+                .replace(/<svg/g, '\n<svg')
+                .replace(/<\/svg>/g, '\n</svg>')
+                .replace(/<(line|path|defs|linearGradient|stop)/g, '\n  <$1')
+                .replace(/><\//g, '>\n</');
+                
+            svgCode.textContent = svgContent;
+        }
+        
+        function copyCode() {
+            const svgCode = document.getElementById('svgCode').textContent;
+            navigator.clipboard.writeText(svgCode).then(() => {
+                alert('SVG 代码已复制到剪贴板！');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制代码。');
+            });
+        }
+        
+        // 初始化
+        window.onload = updateLine;
+    </script>
+</body>
+</html>

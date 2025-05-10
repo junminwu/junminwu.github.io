@@ -169,7 +169,7 @@
     <div class="container">
         <div class="header">
             <h1>四象限散点图分析工具</h1>
-            <p>导入的数据请包含三列，维度、指标1、指标2</p>
+            <p>一键对元素分类，方便比较</p>
         </div>
 
         <div class="card">
@@ -177,7 +177,7 @@
             <div class="file-upload">
                 <input type="file" id="fileInput" accept=".xlsx,.csv" style="display: none;">
                 <button class="file-upload-btn" onclick="document.getElementById('fileInput').click()">选择Excel或CSV文件</button>
-                <div class="file-info" id="fileInfo">未选择文件</div>
+                <div class="file-info" id="fileInfo">文件需包含维度、两个指标总计三列</div>
             </div>
         </div>
 
@@ -543,6 +543,9 @@
                             max: xMax + xPadding,
                             grid: {
                                 drawOnChartArea: false
+                            },
+                            ticks: {
+                                display: false
                             }
                         },
                         y: {
@@ -558,6 +561,9 @@
                             max: yMax + yPadding,
                             grid: {
                                 drawOnChartArea: false
+                            },
+                            ticks: {
+                                display: false
                             }
                         }
                     },
@@ -604,34 +610,35 @@
                         ctx.save();
                         ctx.lineWidth = 2;
                         ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-                        ctx.setLineDash([5, 5]);
+                        ctx.setLineDash([0, 0]);
                         
-                        // X轴分割线
+                        // X轴分割线（垂直） - 添加向上箭头
                         ctx.beginPath();
                         ctx.moveTo(xDividerPixel, chartArea.top);
                         ctx.lineTo(xDividerPixel, chartArea.bottom);
                         ctx.stroke();
                         
-                        // Y轴分割线
+                        // 绘制向上箭头
+                        ctx.beginPath();
+                        ctx.moveTo(xDividerPixel, chartArea.top);
+                        ctx.lineTo(xDividerPixel - 5, chartArea.top + 10);
+                        ctx.moveTo(xDividerPixel, chartArea.top);
+                        ctx.lineTo(xDividerPixel + 5, chartArea.top + 10);
+                        ctx.stroke();
+                        
+                        // Y轴分割线（水平） - 添加向右箭头
                         ctx.beginPath();
                         ctx.moveTo(chartArea.left, yDividerPixel);
                         ctx.lineTo(chartArea.right, yDividerPixel);
                         ctx.stroke();
                         
-                        ctx.restore();
-                        
-                        // 添加分割线值标签（移到图表内侧）
-                        ctx.save();
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                        ctx.font = '12px Arial';
-                        
-                        // X轴分割线值（移到图表内侧）
-                        ctx.textAlign = 'left';
-                        ctx.fillText(`${currentConfig.xDivider.toFixed(2)}`, xDividerPixel + 5, chartArea.bottom - 10);
-                        
-                        // Y轴分割线值（移到图表内侧）
-                        ctx.textAlign = 'left';
-                        ctx.fillText(`${currentConfig.yDivider.toFixed(2)}`, chartArea.left + 10, yDividerPixel - 5);
+                        // 绘制向右箭头
+                        ctx.beginPath();
+                        ctx.moveTo(chartArea.right, yDividerPixel);
+                        ctx.lineTo(chartArea.right - 10, yDividerPixel - 5);
+                        ctx.moveTo(chartArea.right, yDividerPixel);
+                        ctx.lineTo(chartArea.right - 10, yDividerPixel + 5);
+                        ctx.stroke();
                         
                         ctx.restore();
                     }

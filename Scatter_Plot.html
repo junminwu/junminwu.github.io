@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四象限散点图分析工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 10px 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .file-upload {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            background-color: #fafbfc;
+            transition: all 0.3s;
+        }
+        .file-upload:hover {
+            border-color: #3498db;
+            background-color: #f0f7ff;
+        }
+        .file-upload-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .file-upload-btn:hover {
+            background-color: #2980b9;
+        }
+        .file-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .control-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .generate-btn {
+            background-color: #2ecc71;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .generate-btn:hover {
+            background-color: #27ae60;
+        }
+        .chart-container {
+            position: relative;
+            height: 600px;
+            margin-top: 20px;
+        }
+        .quadrant-label {
+            position: absolute;
+            font-weight: bold;
+            color: #333;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 5px 10px;
+            border-radius: 4px;
+            z-index: 10;
+        }
+        .q1-label { top: 10px; right: 10px; }
+        .q2-label { top: 10px; left: 10px; }
+        .q3-label { bottom: 10px; left: 10px; }
+        .q4-label { bottom: 10px; right: 10px; }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .hidden {
+            display: none;
+        }
+        .custom-divider {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .custom-divider input {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>四象限散点图分析工具</h1>
+            <p>一键对元素分类，方便比较</p>
+        </div>
+
+        <div class="card">
+            <h2>数据导入</h2>
+            <div class="file-upload">
+                <input type="file" id="fileInput" accept=".xlsx,.csv" style="display: none;">
+                <button class="file-upload-btn" onclick="document.getElementById('fileInput').click()">选择Excel或CSV文件</button>
+                <div class="file-info" id="fileInfo">未选择文件</div>
+            </div>
+        </div>
+
+        <div class="card" id="configCard" style="display: none;">
+            <h2>图表配置</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label class="control-label">维度列</label>
+                    <select id="dimensionSelect"></select>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">指标1 (X轴)</label>
+                    <select id="metric1Select"></select>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">指标2 (Y轴)</label>
+                    <select id="metric2Select"></select>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label class="control-label">X轴分割线设置</label>
+                    <select id="xDividerType" onchange="toggleCustomDivider('x')">
+                        <option value="mean">平均值</option>
+                        <option value="median">中位值</option>
+                        <option value="custom">自定义值</option>
+                    </select>
+                    <div id="xCustomDivider" class="custom-divider hidden">
+                        <input type="number" id="xCustomValue" placeholder="输入X轴分割线值">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Y轴分割线设置</label>
+                    <select id="yDividerType" onchange="toggleCustomDivider('y')">
+                        <option value="mean">平均值</option>
+                        <option value="median">中位值</option>
+                        <option value="custom">自定义值</option>
+                    </select>
+                    <div id="yCustomDivider" class="custom-divider hidden">
+                        <input type="number" id="yCustomValue" placeholder="输入Y轴分割线值">
+                    </div>
+                </div>
+            </div>
+
+            <button class="generate-btn" onclick="generateChart()">生成四象限散点图</button>
+        </div>
+
+        <div class="card" id="chartCard" style="display: none;">
+            <h2>四象限散点图</h2>
+            <div class="chart-container">
+                <canvas id="scatterChart"></canvas>
+                <div class="quadrant-label q1-label" id="q1Label">第一象限</div>
+                <div class="quadrant-label q2-label" id="q2Label">第二象限</div>
+                <div class="quadrant-label q3-label" id="q3Label">第三象限</div>
+                <div class="quadrant-label q4-label" id="q4Label">第四象限</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><a href="http://junminwu.github.io" target="_blank">wujunmin出品</a></p>
+        </div>
+    </div>
+
+    <script>
+        let data = [];
+        let headers = [];
+        let chart = null;
+
+        // 文件导入处理
+        document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+
+        // 页面加载时初始化自定义值输入框的显示状态
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleCustomDivider('x');
+            toggleCustomDivider('y');
+        });
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('fileInfo').textContent = `已选择: ${file.name}`;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const fileData = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(fileData, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    
+                    if (jsonData.length < 2) {
+                        alert('文件内容不足，请确保文件至少包含标题行和一行数据');
+                        return;
+                    }
+
+                    headers = jsonData[0];
+                    data = jsonData.slice(1);
+
+                    // 填充下拉选择框
+                    populateSelects(headers);
+                    
+                    // 显示配置卡片
+                    document.getElementById('configCard').style.display = 'block';
+                } catch (error) {
+                    console.error('解析文件时出错:', error);
+                    alert('解析文件时出错，请确保文件格式正确');
+                }
+            };
+            reader.onerror = function() {
+                alert('读取文件时出错');
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function populateSelects(headers) {
+            const dimensionSelect = document.getElementById('dimensionSelect');
+            const metric1Select = document.getElementById('metric1Select');
+            const metric2Select = document.getElementById('metric2Select');
+            
+            // 清空现有选项
+            dimensionSelect.innerHTML = '';
+            metric1Select.innerHTML = '';
+            metric2Select.innerHTML = '';
+            
+            // 添加新选项
+            headers.forEach((header, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = header;
+                
+                dimensionSelect.appendChild(option.cloneNode(true));
+                metric1Select.appendChild(option.cloneNode(true));
+                metric2Select.appendChild(option.cloneNode(true));
+            });
+            
+            // 默认选择
+            if (headers.length >= 3) {
+                dimensionSelect.value = 0;
+                metric1Select.value = 1;
+                metric2Select.value = 2;
+            }
+        }
+
+        function toggleCustomDivider(axis) {
+            const dividerType = document.getElementById(`${axis}DividerType`).value;
+            const customDivider = document.getElementById(`${axis}CustomDivider`);
+            
+            if (dividerType === 'custom') {
+                customDivider.classList.remove('hidden');
+            } else {
+                customDivider.classList.add('hidden');
+            }
+        }
+
+        function generateChart() {
+            // 获取用户选择
+            const dimensionIndex = parseInt(document.getElementById('dimensionSelect').value);
+            const metric1Index = parseInt(document.getElementById('metric1Select').value);
+            const metric2Index = parseInt(document.getElementById('metric2Select').value);
+            
+            // 获取分割线设置
+            const xDividerType = document.getElementById('xDividerType').value;
+            const yDividerType = document.getElementById('yDividerType').value;
+            
+            // 提取数据
+            const chartData = data.map(row => ({
+                dimension: row[dimensionIndex],
+                x: parseFloat(row[metric1Index]),
+                y: parseFloat(row[metric2Index])
+            })).filter(item => !isNaN(item.x) && !isNaN(item.y));
+            
+            if (chartData.length === 0) {
+                alert('没有有效的数据点，请检查您的数据');
+                return;
+            }
+            
+            // 计算分割线值
+            const xValues = chartData.map(item => item.x);
+            const yValues = chartData.map(item => item.y);
+            
+            let xDivider, yDivider;
+            
+            // X轴分割线
+            if (xDividerType === 'mean') {
+                xDivider = xValues.reduce((sum, val) => sum + val, 0) / xValues.length;
+            } else if (xDividerType === 'median') {
+                const sorted = [...xValues].sort((a, b) => a - b);
+                const mid = Math.floor(sorted.length / 2);
+                xDivider = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+            } else {
+                xDivider = parseFloat(document.getElementById('xCustomValue').value);
+                if (isNaN(xDivider)) {
+                    alert('请输入有效的X轴分割线值');
+                    return;
+                }
+            }
+            
+            // Y轴分割线
+            if (yDividerType === 'mean') {
+                yDivider = yValues.reduce((sum, val) => sum + val, 0) / yValues.length;
+            } else if (yDividerType === 'median') {
+                const sorted = [...yValues].sort((a, b) => a - b);
+                const mid = Math.floor(sorted.length / 2);
+                yDivider = sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+            } else {
+                yDivider = parseFloat(document.getElementById('yCustomValue').value);
+                if (isNaN(yDivider)) {
+                    alert('请输入有效的Y轴分割线值');
+                    return;
+                }
+            }
+            
+            // 更新象限标签
+            const xLabel = headers[metric1Index];
+            const yLabel = headers[metric2Index];
+            
+            document.getElementById('q1Label').textContent = `第一象限: 高${yLabel} 高${xLabel}`;
+            document.getElementById('q2Label').textContent = `第二象限: 高${yLabel} 低${xLabel}`;
+            document.getElementById('q3Label').textContent = `第三象限: 低${yLabel} 低${xLabel}`;
+            document.getElementById('q4Label').textContent = `第四象限: 低${yLabel} 高${xLabel}`;
+            
+            // 创建散点图
+            createScatterPlot(chartData, xDivider, yDivider, xLabel, yLabel);
+            
+            // 显示图表卡片
+            document.getElementById('chartCard').style.display = 'block';
+        }
+
+        function createScatterPlot(chartData, xDivider, yDivider, xLabel, yLabel) {
+            const ctx = document.getElementById('scatterChart').getContext('2d');
+            
+            // 如果已有图表，先销毁
+            if (chart) {
+                chart.destroy();
+            }
+            
+            // 计算数据范围，为了设置合适的图表边界
+            const xMin = Math.min(...chartData.map(d => d.x));
+            const xMax = Math.max(...chartData.map(d => d.x));
+            const yMin = Math.min(...chartData.map(d => d.y));
+            const yMax = Math.max(...chartData.map(d => d.y));
+            
+            // 添加一些边距
+            const xPadding = (xMax - xMin) * 0.1;
+            const yPadding = (yMax - yMin) * 0.1;
+            
+            // 注册Chart.js插件
+            Chart.register(ChartDataLabels);
+            
+            // 创建新图表
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: '数据点',
+                        data: chartData.map(item => ({
+                            x: item.x,
+                            y: item.y,
+                            dimension: item.dimension
+                        })),
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        datalabels: {
+                            color: 'rgba(100, 100, 100, 0.7)', // 更淡的标签颜色
+                            anchor: 'end',
+                            align: 'end',
+                            offset: 5,
+                            font: {
+                                size: 11,
+                                weight: 'bold'
+                            },
+                            formatter: function(value) {
+                                return value.dimension;
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const point = context.raw;
+                                    return `${point.dimension}: (${point.x.toFixed(2)}, ${point.y.toFixed(2)})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: xLabel,
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            min: xMin - xPadding,
+                            max: xMax + xPadding,
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: yLabel,
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            min: yMin - yPadding,
+                            max: yMax + yPadding,
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000
+                    }
+                },
+                plugins: [{
+                    id: 'quadrantLines',
+                    beforeDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        const chartArea = chart.chartArea;
+                        const xAxis = chart.scales.x;
+                        const yAxis = chart.scales.y;
+                        
+                        // 计算分割线的像素位置
+                        const xDividerPixel = xAxis.getPixelForValue(xDivider);
+                        const yDividerPixel = yAxis.getPixelForValue(yDivider);
+                        
+                        // 绘制背景色
+                        // 第一象限 - 右上
+                        ctx.fillStyle = 'rgba(46, 204, 113, 0.1)';
+                        ctx.fillRect(xDividerPixel, chartArea.top, chartArea.right - xDividerPixel, yDividerPixel - chartArea.top);
+                        
+                        // 第二象限 - 左上
+                        ctx.fillStyle = 'rgba(52, 152, 219, 0.1)';
+                        ctx.fillRect(chartArea.left, chartArea.top, xDividerPixel - chartArea.left, yDividerPixel - chartArea.top);
+                        
+                        // 第三象限 - 左下
+                        ctx.fillStyle = 'rgba(231, 76, 60, 0.1)';
+                        ctx.fillRect(chartArea.left, yDividerPixel, xDividerPixel - chartArea.left, chartArea.bottom - yDividerPixel);
+                        
+                        // 第四象限 - 右下
+                        ctx.fillStyle = 'rgba(241, 196, 15, 0.1)';
+                        ctx.fillRect(xDividerPixel, yDividerPixel, chartArea.right - xDividerPixel, chartArea.bottom - yDividerPixel);
+                        
+                        // 绘制分割线
+                        ctx.save();
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+                        ctx.setLineDash([5, 5]);
+                        
+                        // X轴分割线
+                        ctx.beginPath();
+                        ctx.moveTo(xDividerPixel, chartArea.top);
+                        ctx.lineTo(xDividerPixel, chartArea.bottom);
+                        ctx.stroke();
+                        
+                        // Y轴分割线
+                        ctx.beginPath();
+                        ctx.moveTo(chartArea.left, yDividerPixel);
+                        ctx.lineTo(chartArea.right, yDividerPixel);
+                        ctx.stroke();
+                        
+                        ctx.restore();
+                        
+                        // 添加分割线值标签（移到图表内侧）
+                        ctx.save();
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                        ctx.font = '12px Arial';
+                        
+                        // X轴分割线值（移到图表内侧）
+                        ctx.textAlign = 'left';
+                        ctx.fillText(`${xDivider.toFixed(2)}`, xDividerPixel + 5, chartArea.bottom - 10);
+                        
+                        // Y轴分割线值（移到图表内侧）
+                        ctx.textAlign = 'left';
+                        ctx.fillText(`${yDivider.toFixed(2)}`, chartArea.left + 10, yDividerPixel - 5);
+                        
+                        ctx.restore();
+                    }
+                }]
+            });
+        }
+    </script>
+</body>
+</html>

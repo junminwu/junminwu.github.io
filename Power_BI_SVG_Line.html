@@ -6,13 +6,13 @@
     <title>Power BI SVG 纵向分割线生成器</title>
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #34495e;
-            --accent-color: #3498db;
-            --light-gray: #ecf0f1;
-            --medium-gray: #bdc3c7;
-            --dark-gray: #7f8c8d;
-            --white: #ffffff;
+            --primary-color: rgb(44, 62, 80);
+            --secondary-color: rgb(52, 73, 94);
+            --accent-color: rgb(52, 152, 219);
+            --light-gray: rgb(236, 240, 241);
+            --medium-gray: rgb(189, 195, 199);
+            --dark-gray: rgb(127, 140, 141);
+            --white: rgb(255, 255, 255);
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
         
@@ -29,9 +29,9 @@
         footer {
             text-align: center;
             margin-top: 40px;
-            color: #95a5a6;
+            color: rgb(149, 165, 166);
             font-size: 14px;
-            border-top: 1px solid #eaeaea;
+            border-top: 1px solid rgb(234, 234, 234);
             padding-top: 20px;
         }
         
@@ -129,7 +129,7 @@
         }
         
         .code-area {
-            background-color: #f8f9fa;
+            background-color: rgb(248, 249, 250);
             border-radius: 4px;
             padding: 15px;
             font-family: 'Consolas', 'Monaco', monospace;
@@ -137,7 +137,7 @@
             overflow-x: auto;
             margin-bottom: 10px;
             font-size: 13px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid rgb(224, 224, 224);
             max-height: 200px;
             overflow-y: auto;
         }
@@ -158,7 +158,7 @@
         }
         
         .copy-btn:hover {
-            background-color: #2980b9;
+            background-color: rgb(41, 128, 185);
             transform: translateY(-1px);
         }
         
@@ -258,7 +258,7 @@
     </div>
 
     <footer>
-        <a href="http://junminwu.github.io/index.html" target="_blank">wujunmin出品</a>
+        <a href="http://junminwu.github.io" target="_blank">wujunmin出品</a>
     </footer>
 
     <script>
@@ -283,6 +283,9 @@
             
             let pathElement;
             
+            // Convert hex color to RGB for SVG
+            const rgbColor = hexToRgb(lineColor);
+            
             switch(lineStyle) {
                 case 'solid':
                     pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -290,7 +293,7 @@
                     pathElement.setAttribute('y1', '0');
                     pathElement.setAttribute('x2', xPos);
                     pathElement.setAttribute('y2', '480');
-                    pathElement.setAttribute('stroke', lineColor);
+                    pathElement.setAttribute('stroke', `rgb(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b})`);
                     pathElement.setAttribute('stroke-width', lineWidth);
                     break;
                     
@@ -300,17 +303,37 @@
                     pathElement.setAttribute('y1', '0');
                     pathElement.setAttribute('x2', xPos);
                     pathElement.setAttribute('y2', '480');
-                    pathElement.setAttribute('stroke', lineColor);
+                    pathElement.setAttribute('stroke', `rgb(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b})`);
                     pathElement.setAttribute('stroke-width', lineWidth);
                     pathElement.setAttribute('stroke-dasharray', '30, 30');
                     break;
-                    
-
-                    
             }
             
             svgPreview.appendChild(pathElement);
             updateSvgCode();
+        }
+        
+        function hexToRgb(hex) {
+            // Remove # if present
+            hex = hex.replace('#', '');
+            
+            // Parse r, g, b values
+            let r, g, b;
+            
+            if (hex.length === 3) {
+                r = parseInt(hex.substring(0, 1).repeat(2), 16);
+                g = parseInt(hex.substring(1, 2).repeat(2), 16);
+                b = parseInt(hex.substring(2, 3).repeat(2), 16);
+            } else if (hex.length === 6) {
+                r = parseInt(hex.substring(0, 2), 16);
+                g = parseInt(hex.substring(2, 4), 16);
+                b = parseInt(hex.substring(4, 6), 16);
+            } else {
+                // Default to blue if invalid
+                return { r: 52, g: 152, b: 219 };
+            }
+            
+            return { r, g, b };
         }
         
         function updateSvgCode() {

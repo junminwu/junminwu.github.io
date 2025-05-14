@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>零售结构分析工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.0.2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #95a5a6;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+            padding-top: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .card {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .card-title {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .btn-secondary {
+            background-color: #95a5a6;
+        }
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+        .file-input {
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 600px;
+            width: 100%;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .file-name {
+            margin-left: 10px;
+            font-style: italic;
+            color: #7f8c8d; 
+        }
+        .instructions {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .slider-container {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .slider {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>零售结构分析工具</h1>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title">数据导入</h2>
+            
+            <div class="instructions">
+                <h3>使用说明</h3>
+                <ol>
+                    <li>上传xlsx或csv文件，文件应包含三列：第一列为维度，第二、三列为两个指标数据</li>
+                    <li>系统将自动计算各指标占总体的百分比，点击"生成散点图"按钮创建可视化图表</li>
+                </ol>
+            </div>
+            
+            <div class="form-group">
+                <label for="fileInput">选择数据文件 (xlsx或csv):</label>
+                <input type="file", id="fileInput", accept=".xlsx,.csv" class="file-input">
+                <span id="fileName" class="file-name"></span>
+            </div>
+            
+            <button id="generateBtn" class="btn" disabled>生成散点图</button>
+            <button id="resetBtn", class="btn btn-secondary">重置</button>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title">散点图结构分析</h2>
+            
+            <div class="slider-container">
+                <div class="slider-label">
+                    <label for="highlightSlider">高亮差异最大的点数量:</label>
+                    <span id="sliderValue">0</span>
+                </div>
+                <input type="range", id="highlightSlider", class="slider", min="0", max="10", value="0", disabled>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="scatterChart"></canvas>
+            </div>
+        </div>
+    <footer>
+        <a href="http://junminwu.github.io" target="_blank">wujunmin出品</a>
+    </footer>
+
+    </div>
+
+
+
+    <script>
+        // 全局变量
+        let scatterChart = null;
+        let rawData = null;
+        let columnHeaders = [];
+        let processedData = [];
+        let highlightCount = 0;
+        let highlightedPoints = [];
+        
+        // DOM元素
+        const fileInput = document.getElementById('fileInput');
+        const fileName = "";
+        const generateBtn = document.getElementById('generateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const chartCanvas = document.getElementById('scatterChart');
+        const highlightSlider = document.getElementById('highlightSlider');
+        const sliderValue = document.getElementById('sliderValue');
+        
+        // 事件监听器
+        fileInput.addEventListener('change', handleFileUpload);
+        generateBtn.addEventListener('click', generateScatterChart);
+        resetBtn.addEventListener('click', resetApplication);
+        highlightSlider.addEventListener('input', updateHighlightedPoints);
+        
+        // 处理文件导入
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            fileName.textContent = file.name;
+            generateBtn.disabled = false;
+            
+            const reader = new FileReader();
+            
+            if (file.name.endsWith('.csv')) {
+                reader.onload = function(e) {
+                    parseCSV(e.target.result);
+                };
+                reader.readAsText(file);
+            } else if (file.name.endsWith('.xlsx')) {
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    parseExcel(data);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+        
+        // 解析CSV文件
+        function parseCSV(csvData) {
+            const lines = csvData.split('\n');
+            columnHeaders = lines[0].split(',').map(header => header.trim());
+            
+            rawData = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue;
+                
+                const values = lines[i].split(',');
+                if (values.length >= 3) {
+                    rawData.push({
+                        dimension: values[0].trim(),
+                        value1: parseFloat(values[1]) || 0,
+                        value2: parseFloat(values[2]) || 0
+                    });
+                }
+            }
+        }
+        
+        // 解析Excel文件
+        function parseExcel(data) {
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            if (jsonData.length === 0) return;
+            
+            // 获取列标题
+            columnHeaders = jsonData[0].slice(0, 3).map(header => header ? header.toString().trim() : '');
+            
+            rawData = [];
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row || row.length < 3) continue;
+                
+                rawData.push({
+                    dimension: row[0] ? row[0].toString().trim() : '',
+                    value1: parseFloat(row[1]) || 0,
+                    value2: parseFloat(row[2]) || 0
+                });
+            }
+        }
+        
+        // 更新高亮点
+        function updateHighlightedPoints() {
+            highlightCount = parseInt(highlightSlider.value);
+            sliderValue.textContent = highlightCount;
+            
+            if (!scatterChart || !processedData || processedData.length === 0) return;
+            
+            // 计算差异并排序
+            const sortedData = [...processedData]
+                .map(item => ({
+                    ...item,
+                    diff: Math.abs(item.percentage1 - item.percentage2)
+                }))
+                .sort((a, b) => b.diff - a.diff);
+            
+            // 保存高亮点数据
+            highlightedPoints = sortedData.slice(0, highlightCount);
+            
+            // 更新图表数据点颜色和大小
+            const newBackgroundColors = [];
+            const newBorderColors = [];
+            const newPointRadius = [];
+            const newPointHoverRadius = [];
+            
+            processedData.forEach(item => {
+                const isHighlighted = highlightedPoints
+                    .some(highlighted => highlighted.dimension === item.dimension);
+                
+                if (isHighlighted) {
+                    newBackgroundColors.push('rgba(255, 215, 0, 0.8)'); // 高亮金色
+                    newBorderColors.push('rgba(218, 165, 32, 1)'); // 高亮金色边框
+                    newPointRadius.push(12); // 放大点半径
+                    newPointHoverRadius.push(14); // 放大悬停半径
+                } else {
+                    newBackgroundColors.push(
+                        item.percentage1 <= item.percentage2 
+                            ? 'rgba(100, 149, 237, 0.7)'  // 淡蓝色
+                            : 'rgba(255, 0, 0, 0.5)'       // 淡红色
+                    );
+                    newBorderColors.push(
+                        item.percentage1 <= item.percentage2 
+                            ? 'rgba(70, 130, 180, 1)'     // 深蓝色 (Steel Blue)
+                            : 'rgba(220, 20, 60, 1)'      // 深红色 (Crimson)
+                    );
+                    newPointRadius.push(8);
+                    newPointHoverRadius.push(10);
+                }
+            });
+            
+            scatterChart.data.datasets[0].backgroundColor = newBackgroundColors;
+            scatterChart.data.datasets[0].borderColor = newBorderColors;
+            scatterChart.data.datasets[0].pointRadius = newPointRadius;
+            scatterChart.data.datasets[0].pointHoverRadius = newPointHoverRadius;
+            
+            // 更新连接线注释
+            updateConnectionLines();
+            
+            // 更新图表以显示/隐藏标签
+            scatterChart.update();
+        }
+        
+        // 更新连接线注释
+        function updateConnectionLines() {
+            if (!scatterChart) return;
+            
+            // 移除旧的连接线注释
+            const existingAnnotations = scatterChart.options.plugins.annotation.annotations;
+            Object.keys(existingAnnotations).forEach(key => {
+                if (key.startsWith('connector_')) {
+                    delete existingAnnotations[key];
+                }
+            });
+            
+            // 添加新的连接线注释
+            highlightedPoints.forEach((point, index) => {
+                const annotationKey = `connector_${index}`;
+                
+                // 终点Y坐标与当前散点的Y坐标一致
+                const yEnd = point.percentage2;
+                // X坐标为相同Y坐标的虚线的X坐标(对角线x=y，所以xEnd = yEnd)
+                const xEnd = yEnd;
+                
+                scatterChart.options.plugins.annotation.annotations[annotationKey] = {
+                    type: 'line',
+                    xMin: point.percentage1,
+                    xMax: xEnd,
+                    yMin: point.percentage2,
+                    yMax: yEnd,
+                    borderColor: 'rgba(218, 165, 32, 0.7)',
+                    borderWidth: 2,
+                    borderDash: [0, 0] // 实线
+                };
+            });
+            
+            scatterChart.update();
+        }
+        
+        // 生成散点图
+        function generateScatterChart() {
+            if (!rawData || rawData.length === 0) {
+                alert('没有有效数据可生成图表');
+                return;
+            }
+            
+            // 计算总和
+            const totalValue1 = rawData.reduce((sum, item) => sum + item.value1, 0);
+            const totalValue2 = rawData.reduce((sum, item) => sum + item.value2, 0);
+            
+            // 计算百分比
+            processedData = rawData.map(item => ({
+                dimension: item.dimension,
+                value1: item.value1,
+                value2: item.value2,
+                percentage1: totalValue1 > 0 ? (item.value1 / totalValue1) * 100 : 0,
+                percentage2: totalValue2 > 0 ? (item.value2 / totalValue2) * 100 : 0
+            }));
+            
+            // 确定坐标轴最大值
+            const maxPercentage1 = Math.max(...processedData.map(item => item.percentage1));
+            const maxPercentage2 = Math.max(...processedData.map(item => item.percentage2));
+            const axisMax = Math.max(maxPercentage1, maxPercentage2) * 1.1; // 增加10%的边距
+            
+            // 准备图表数据
+            const chartData = {
+                datasets: [{
+                    label: '数据点',
+                    data: processedData.map(item => ({
+                        x: item.percentage1,
+                        y: item.percentage2,
+                        dimension: item.dimension
+                    })),
+                    backgroundColor: processedData.map(item => 
+                        item.percentage1 <= item.percentage2 
+                            ? 'rgba(100, 149, 237, 0.7)'  // 淡蓝色 
+                            : 'rgba(255, 0, 0, 0.5)'      // 淡红色
+                    ),
+                    borderColor: processedData.map(item => 
+                        item.percentage1 <= item.percentage2 
+                            ? 'rgba(70, 130, 180, 1)'     // 深蓝色 (Steel Blue)
+                            : 'rgba(220, 20, 60, 1)'      // 深红色 (Crimson)
+                    ),
+                    borderWidth: 1,
+                    pointRadius: 8,
+                    pointHoverRadius: 10
+                }]
+            };
+            
+            // 如果已有图表，先销毁
+            if (scatterChart) {
+                scatterChart.destroy();
+            }
+            
+            // 创建新图表
+            const ctx = chartCanvas.getContext('2d');
+            scatterChart = new Chart(ctx, {
+                type: 'scatter',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: `${columnHeaders[1] || '指标1'} (%)`,
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            min: 0,
+                            max: axisMax,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toFixed(1) + '%';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                drawOnChartArea: false // 不在图表区域绘制网格线
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: `${columnHeaders[2] || '指标2'} (%)`,
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            min: 0,
+                            max: axisMax,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toFixed(1) + '%'; // 1小数位
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)',
+                                drawOnChartArea: false // 不在图表区域绘制网格线
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const data = context.raw;
+                                    const item = processedData.find(item => item.dimension === data.dimension);
+                	    return [
+                    	    `${columnHeaders[0] || '维度'}: ${data.dimension}`,
+                    	    `${columnHeaders[1] || '指标1'}: ${data.x.toFixed(1)}% (${item.value1})`,  // 修改这里
+                    	    `${columnHeaders[2] || '指标2'}: ${data.y.toFixed(1)}% (${item.value2})`,  // 修改这里
+                    `	    差异: ${Math.abs(data.x - data.y).toFixed(1)}%`  // 修改这里
+                	    ];
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        },
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: 0,
+                                    yMax: axisMax,
+                                    xMin: 0,
+                                    xMax: axisMax,
+                                    borderColor: 'rgba(128, 128, 128, 0.8)', // 灰色虚线
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                },
+                                box1: {
+                                    type: 'box',
+                                    yMin: 0,
+                                    yMax: axisMax,
+                                    xMin: 0,
+                                    xMax: axisMax,
+                                    backgroundColor: function(ctx) {
+                                        // 创建对角线分割的渐变效果
+                                        const chart = ctx.chart;
+                                        const {ctx: context, chartArea} = chart;
+                                        const gradient = context.createLinearGradient(
+                                            chartArea.left, chartArea.bottom,
+                                            chartArea.right, chartArea.top
+                                        );
+                                        gradient.addColorStop(0, 'rgba(237, 237, 237, 0.5)');
+                                        gradient.addColorStop(0.5, 'rgba(237, 237, 237, 0.4)');
+                                        gradient.addColorStop(1, 'rgba(237, 237, 237, 0.3)');
+                                        return gradient;
+                                    },
+                                    borderWidth: 0
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        line: {
+                            borderWidth: 2
+                        }
+                    }
+                }
+            });
+            
+            // 自定义标签显示逻辑
+            Chart.register({
+                id: 'scatterLabels',
+                afterDatasetsDraw(chart, args, options) {
+                    const { ctx, data, chartArea: { top, bottom, left, right, width, height }, scales: { x, y } } = chart;
+                    
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    data.datasets.forEach(dataset => {
+                        dataset.data.forEach((dataPoint) => {
+                            // 检查当前点是否在高亮范围内
+                            const isHighlighted = highlightedPoints.some(
+                                point => point.dimension === dataPoint.dimension
+                            );
+                            
+                            // 仅在高亮范围内显示标签
+                            if (isHighlighted) {
+                                const xPos = x.getPixelForValue(dataPoint.x);
+                                const yPos = y.getPixelForValue(dataPoint.y);
+                                
+                                ctx.fillStyle = '#333';
+                                ctx.fillText(dataPoint.dimension, xPos, yPos - 15);
+                            }
+                        });
+                    });
+                }
+            });
+            
+            // 启用滑块
+            highlightSlider.disabled = false;
+            highlightSlider.value = 0;
+            sliderValue.textContent = '0';
+            highlightedPoints = [];
+        }
+        
+        // 重置应用
+        function resetApplication() {
+            if (scatterChart) {
+                scatterChart.destroy();
+                scatterChart = null;
+            }
+            
+            fileInput.value = '';
+            fileName.textContent = '未选择文件';
+            generateBtn.disabled = true;
+            rawData = null;
+            processedData = [];
+            columnHeaders = [];
+            highlightedPoints = [];
+            
+            // 重置滑块
+            highlightSlider.disabled = true;
+            highlightSlider.value = 0;
+            sliderValue.textContent = '0';
+        }
+    </script>
+</body>
+</html>

@@ -18,7 +18,7 @@
             height: 80vh;
         }
         .svg-container {
-            flex: 1;
+            flex: 2; /* 增加左侧图片区域的宽度比例 */
             border: 1px solid #ccc;
             padding: 10px;
             overflow: auto;
@@ -43,6 +43,11 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            overflow: hidden; /* 确保表格滚动条正常工作 */
+        }
+        .table-scroll {
+            overflow-y: auto; /* 添加垂直滚动条 */
+            flex: 1;
         }
         table {
             width: 100%;
@@ -56,6 +61,15 @@
         }
         th {
             background-color: #f2f2f2;
+        }
+        th:nth-child(1) {
+            width: 25%; /* 减少坐标名称列的宽度 */
+        }
+        th:nth-child(2), th:nth-child(3) {
+            width: 20%;
+        }
+        th:nth-child(4) {
+            width: 35%;
         }
         input {
             width: 100%;
@@ -166,18 +180,20 @@
         </div>
         
         <div class='table-container'>
-            <table id='coordinatesTable'>
-                <thead>
-                    <tr>
-                        <th>坐标名称</th>
-                        <th>X</th>
-                        <th>Y</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id='tableBody'>
-                </tbody>
-            </table>
+            <div class='table-scroll'>
+                <table id='coordinatesTable'>
+                    <thead>
+                        <tr>
+                            <th>坐标名称</th>
+                            <th>X</th>
+                            <th>Y</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id='tableBody'>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -543,6 +559,10 @@
             });
             
             tableBody.appendChild(newRow);
+            
+            // 滚动到表格底部
+            const tableScroll = document.querySelector('.table-scroll');
+            tableScroll.scrollTop = tableScroll.scrollHeight;
         }
         
         // 更新标记名称

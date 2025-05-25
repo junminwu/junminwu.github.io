@@ -5,145 +5,284 @@
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>Power BI SVG坐标采集工具</title>
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --border-radius: 4px;
+            --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
             display: flex;
             flex-direction: column;
             gap: 20px;
+            min-height: 100vh;
         }
+        
+        h1 {
+            color: var(--primary-color);
+            margin: 0;
+            padding: 15px 0;
+            font-weight: 600;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+      .table-container h3 {
+           display: none;
+       }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: rgb(149, 165, 166);
+            font-size: 14px;
+            border-top: 1px solid rgb(234, 234, 234);
+            padding-top: 20px;
+        }
+        
         .container {
             display: flex;
             gap: 20px;
-            height: 80vh;
+            height: calc(100vh - 180px);
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 15px;
         }
+        
         .svg-container {
-            flex: 2; /* 增加左侧图片区域的宽度比例 */
-            border: 1px solid #ccc;
-            padding: 10px;
+            flex: 2;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            padding: 15px;
             overflow: auto;
             position: relative;
+            background-color: white;
         }
+        
         .svg-wrapper {
             position: relative;
             display: inline-block;
+            width: 100%;
+            height: 100%;
         }
+        
         .svg-dimensions {
             display: none;
             position: absolute;
             top: 10px;
             left: 10px;
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(255, 255, 255, 0.9);
             padding: 5px 10px;
-            border-radius: 4px;
+            border-radius: var(--border-radius);
             font-size: 14px;
             z-index: 10;
+            box-shadow: var(--box-shadow);
+            border: 1px solid #e0e0e0;
         }
+        
         .table-container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* 确保表格滚动条正常工作 */
+            overflow: hidden;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 15px;
         }
+        
         .table-scroll {
-            overflow-y: auto; /* 添加垂直滚动条 */
+            overflow-y: auto;
             flex: 1;
+            margin-top: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
         }
+        
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 0;
+            border: 1px solid #e0e0e0; /* 确保表格整体有边框 */
         }
+        
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            border: 1px solid #e0e0e0;
+            padding: 10px 12px;
             text-align: left;
         }
+        
         th {
-            background-color: #f2f2f2;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            position: sticky;
+            top: 0;
+            border: 1px solid #e0e0e0; /* 添加这行确保表头单元格边框 */
         }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        
         th:nth-child(1) {
-            width: 25%; /* 减少坐标名称列的宽度 */
+            width: 35%;
         }
+        
         th:nth-child(2), th:nth-child(3) {
             width: 20%;
         }
+        
         th:nth-child(4) {
-            width: 35%;
+            width: 25%;
         }
+        
         input {
             width: 100%;
             box-sizing: border-box;
-            padding: 5px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-family: inherit;
+            transition: border 0.3s;
         }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
         button {
             padding: 8px 16px;
-            background-color: #4CAF50;
+            background-color: var(--accent-color);
             color: white;
             border: none;
+            border-radius: var(--border-radius);
             cursor: pointer;
             margin-right: 10px;
             white-space: nowrap;
+            font-family: inherit;
+            font-weight: 500;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+        
         button:hover {
-            background-color: #45a049;
+            background-color: #2980b9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
+        
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
         .delete-btn {
-            background-color: #f44336;
+            background-color: var(--danger-color);
         }
+        
         .delete-btn:hover {
-            background-color: #d32f2f;
+            background-color: #c0392b;
         }
+        
         .download-btn {
-            background-color: #2196F3;
+            background-color: var(--success-color);
         }
+        
         .download-btn:hover {
-            background-color: #0b7dda;
+            background-color: #219653;
         }
+        
         .toolbar {
             display: flex;
             align-items: center;
             margin-bottom: 20px;
             flex-wrap: nowrap;
             overflow-x: auto;
+            padding: 10px 0;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 15px;
         }
+        
         .zoom-controls {
             display: flex;
             align-items: center;
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 5px;
-            border-radius: 4px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: var(--border-radius);
             margin-right: 10px;
+            border: 1px solid #e0e0e0;
         }
+        
         .zoom-controls button {
             padding: 5px 10px;
             margin: 0 2px;
+            min-width: 30px;
         }
+        
         .zoom-percentage {
-            margin: 0 5px;
+            margin: 0 8px;
             min-width: 40px;
             text-align: center;
+            font-weight: 500;
         }
+        
         #svgFile {
-            margin-right: 10px;
+            margin-right: 15px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            background-color: white;
+            cursor: pointer;
         }
+        
+        #svgFile:hover {
+            border-color: var(--accent-color);
+        }
+        
         .view-toggle {
-            background-color: #9c27b0;
+            background-color: #9b59b6;
         }
+        
         .view-toggle:hover {
-            background-color: #7b1fa2;
+            background-color: #8e44ad;
         }
+        
         #svgCode {
             width: 100%;
             height: 100%;
-            font-family: monospace;
+            font-family: 'Consolas', 'Courier New', monospace;
             display: none;
             white-space: pre;
             overflow: auto;
-            background-color: #f5f5f5;
-            padding: 10px;
-            border: 1px solid #ddd;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            line-height: 1.5;
         }
+        
         .svg-content {
             width: 100%;
             height: 100%;
@@ -151,9 +290,69 @@
             justify-content: flex-start;
             align-items: flex-start;
         }
+        
         #svgPreview {
             width: 100%;
             height: 100%;
+        }
+        
+        .intro-text {
+            color: #666;
+            margin: 0;
+            line-height: 1.6;
+        }
+        
+        .intro-text a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .intro-text a:hover {
+            text-decoration: underline;
+        }
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .svg-container, .table-container {
+                flex: none;
+                width: 100%;
+            }
+            
+            .toolbar {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            #svgFile {
+                width: 100%;
+                margin-right: 0;
+            }
         }
     </style>
 </head>
@@ -166,20 +365,21 @@
             <button onclick='zoomOut()'>-</button>
             <span class='zoom-percentage'>100%</span>
             <button onclick='zoomIn()'>+</button>
-            <button onclick='resetZoom()'>重置大小</button>
+            <button onclick='resetZoom()'>重置</button>
         </div>
         <button onclick='toggleView()' class='view-toggle' id='viewToggleBtn'>切换到代码视图</button>
         <button onclick='clearAll()'>清除内容</button>
-        <button class='download-btn' onclick='downloadCSV()'>下载CSV</button>
+        <button class='download-btn' onclick='downloadCSV()'>导出CSV</button>
     </div>
     
     <div class='container'>
         <div class='svg-container' id='svgDisplay'>
-            <p>请选择图片文件，兼容SVG格式及像素图片格式，工具在本地运行，具有信息保密性。<a href="https://www.bilibili.com/video/BV15uVWzrEdh/" target="_blank">查看视频说明</a></p>
+            <p class='intro-text'>请选择图片文件，兼容SVG格式及像素图片格式，工具在本地运行，具有信息保密性。<a href="https://www.bilibili.com/video/BV15uVWzrEdh/" target="_blank">查看视频说明</a></p>
             <div id='svgCode'></div>
         </div>
         
         <div class='table-container'>
+            <h3>坐标数据</h3>
             <div class='table-scroll'>
                 <table id='coordinatesTable'>
                     <thead>
@@ -196,6 +396,9 @@
             </div>
         </div>
     </div>
+    <footer>
+        <a href="http://junminwu.github.io" target="_blank">wujunmin出品</a>
+    </footer>
 
     <script>
         let pointCounter = 1;
@@ -624,7 +827,7 @@
         function clearAll() {
             document.getElementById('tableBody').innerHTML = '';
             document.getElementById('svgFile').value = '';
-            document.getElementById('svgDisplay').innerHTML = '<p>请选择图片文件</p><div id="svgCode"></div>';
+            document.getElementById('svgDisplay').innerHTML = '<p class="intro-text">请选择图片文件，兼容SVG格式及像素图片格式，工具在本地运行，具有信息保密性。<a href="https://www.bilibili.com/video/BV15uVWzrEdh/" target="_blank">查看视频说明</a></p><div id="svgCode"></div>';
             pointCounter = 1;
             svgElement = null;
             markers = [];

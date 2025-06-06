@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang='zh-CN'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Power BI HTML 富文本工具</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 20px auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #95a5a6;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+            padding-top: 20px;
+        }
+
+        .editor-section, .preview-section {
+            flex: 1;
+            padding: 20px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        .editor-section {
+            background-color: #fff;
+            border-right: 1px solid #e0e0e0;
+        }
+        .preview-section {
+            background-color: #f9f9f9;
+            position: relative;
+        }
+        h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+        .text-editor {
+            flex-grow: 1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.5;
+            outline: none;
+            resize: none;
+            overflow-y: auto;
+        }
+        .html-preview {
+            flex-grow: 1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            background-color: #fff;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 0;
+        }
+        .toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f0f2f5;
+            border-radius: 4px;
+        }
+        .toolbar-row {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .toolbar button, .toolbar select {
+            padding: 6px 12px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            transition: all 0.2s;
+        }
+        .toolbar button:hover, .toolbar select:hover {
+            background-color: #e9ecef;
+        }
+        .toolbar button.active {
+            background-color: #4a6fa5;
+            color: white;
+        }
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+        }
+        .color-picker {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border: none;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            background-color: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        .copy-btn:hover {
+            background-color: #3a5a80;
+        }
+        .clear-btn {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            color: #333;
+        }
+        .clear-btn:hover {
+            background-color: #e9ecef;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            background-color: #2c3e50;
+            color: white;
+        }
+        .header h1 {
+            margin: 0;
+            font-weight: 300;
+        }
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <h1>Power BI HTML 富文本工具</h1>
+    </div>
+    
+    <div class='container'>
+        <div class='editor-section'>
+            <h2>文本编辑器</h2>
+            <div class='toolbar'>
+                <div class='toolbar-row'>
+                    <select id='font-family'>
+                        <option value='Arial'>Arial</option>
+                        <option value='Helvetica'>Helvetica</option>
+                        <option value='Times New Roman'>Times New Roman</option>
+                        <option value='Georgia'>Georgia</option>
+                        <option value='Roboto'>Roboto</option>
+                        <option value='Open Sans'>Open Sans</option>
+                        <option value='Lato'>Lato</option>
+                        <option value='Montserrat'>Montserrat</option>
+                    </select>
+                    <select id='font-size'>
+                        <option value='12'>12px</option>
+                        <option value='14'>14px</option>
+                        <option value='16'>16px</option>
+                        <option value='18' selected>18px</option>
+                        <option value='20'>20px</option>
+                        <option value='24'>24px</option>
+                        <option value='28'>28px</option>
+                        <option value='32'>32px</option>
+                        <option value='36'>36px</option>
+                    </select>
+                    <button id='bold-btn' title='加粗'><strong>B</strong></button>
+                    <button id='italic-btn' title='倾斜'><em>I</em></button>
+                    <button id='underline-btn' title='下划线'><u>U</u></button>
+                    <button id='strike-btn' title='删除线'><s>S</s></button>
+                </div>
+                <div class='toolbar-row'>
+                    <div class='color-picker-container'>
+                        <label for='text-color'>文字颜色:</label>
+                        <input type='color' id='text-color' class='color-picker' value='#000000'>
+                    </div>
+                    <div class='color-picker-container'>
+                        <label for='bg-color'>背景颜色:</label>
+                        <input type='color' id='bg-color' class='color-picker' value='#ffffff'>
+                    </div>
+                    <button id='clear-btn' class='clear-btn' title='清除格式'>清除格式</button>
+                </div>
+            </div>
+            <div id='text-editor' class='text-editor' contenteditable='true'>在这里输入您的文本...</div>
+        </div>
+        
+        <div class='preview-section'>
+            <h2>HTML代码</h2>
+            <button id='copy-btn' class='copy-btn'>复制HTML代码</button>
+            <pre id='html-preview' class='html-preview'></pre>
+        </div>
+    </div>
+
+    <footer>
+        <a href="http://junminwu.github.io" target="_blank">wujunmin出品</a>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const textEditor = document.getElementById('text-editor');
+            const htmlPreview = document.getElementById('html-preview');
+            const copyBtn = document.getElementById('copy-btn');
+            const boldBtn = document.getElementById('bold-btn');
+            const italicBtn = document.getElementById('italic-btn');
+            const underlineBtn = document.getElementById('underline-btn');
+            const strikeBtn = document.getElementById('strike-btn');
+            const fontFamily = document.getElementById('font-family');
+            const fontSize = document.getElementById('font-size');
+            const textColor = document.getElementById('text-color');
+            const bgColor = document.getElementById('bg-color');
+            const clearBtn = document.getElementById('clear-btn');
+            
+            // 初始化编辑器内容
+            textEditor.innerHTML = '';
+            updateHTMLPreview();
+            
+            // 更新HTML预览
+            function updateHTMLPreview() {
+                let content = textEditor.innerHTML;
+                
+                // 替换所有双引号为单引号
+                content = content.replace(/"/g, '\'');
+                
+                // 替换style="为style='
+                content = content.replace(/style="/g, 'style=\'');
+                content = content.replace(/";/g, '\';');
+                content = content.replace(/" /g, '\' ');
+                content = content.replace(/"/g, '\'');
+                
+                // 合并嵌套的span标签
+                content = mergeNestedSpans(content);
+                
+                // 确保内容被包裹在带有id的p标签中
+                const rawHtmlCode = `<p id='wujunmin' style='font-family: Arial; font-size: 18px;'>${content}</p>`;
+                
+                // 格式化HTML代码
+                const formattedHtmlCode = formatHTML(rawHtmlCode);
+                
+                // 显示HTML代码
+                htmlPreview.textContent = formattedHtmlCode;
+            }
+            
+            // 格式化HTML代码
+            function formatHTML(html) {
+                let formatted = '';
+                let indent = 0;
+                
+                // 创建一个临时的DOM元素来解析HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                
+                // 递归处理DOM树
+                function formatNode(node, level) {
+                    const indentStr = '    '.repeat(level);
+                    
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        // 处理文本节点
+                        const text = node.textContent.trim();
+                        if (text) {
+                            return indentStr + text;
+                        }
+                        return '';
+                    }
+                    
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        // 处理元素节点
+                        let result = '';
+                        const tagName = node.tagName.toLowerCase();
+                        
+                        // 开始标签
+                        result += indentStr + '<' + tagName;
+                        
+                        // 添加属性
+                        Array.from(node.attributes).forEach(attr => {
+                            result += ' ' + attr.name + '=\'' + attr.value + '\'';
+                        });
+                        
+                        result += '>';
+                        
+                        // 如果有子节点，则递归处理
+                        if (node.childNodes.length > 0) {
+                            // 对于简单的内联元素，不添加换行
+                            const isInlineElement = ['span', 'a', 'strong', 'em', 'u', 's', 'br'].includes(tagName);
+                            const hasComplexChildren = Array.from(node.childNodes).some(child => 
+                                child.nodeType === Node.ELEMENT_NODE && !['span', 'a', 'strong', 'em', 'u', 's', 'br'].includes(child.tagName.toLowerCase())
+                            );
+                            
+                            if (!isInlineElement || hasComplexChildren) {
+                                result += '\n';
+                                
+                                // 处理子节点
+                                Array.from(node.childNodes).forEach(child => {
+                                    const childResult = formatNode(child, level + 1);
+                                    if (childResult) {
+                                        result += childResult + '\n';
+                                    }
+                                });
+                                
+                                result += indentStr;
+                            } else {
+                                // 对于简单的内联元素，直接添加内容
+                                Array.from(node.childNodes).forEach(child => {
+                                    result += formatNode(child, 0);
+                                });
+                            }
+                        }
+                        
+                        // 结束标签
+                        result += '</' + tagName + '>';
+                        return result;
+                    }
+                    
+                    return '';
+                }
+                
+                // 处理根节点的所有子节点
+                Array.from(tempDiv.childNodes).forEach(node => {
+                    const nodeResult = formatNode(node, 0);
+                    if (nodeResult) {
+                        formatted += nodeResult + '\n';
+                    }
+                });
+                
+                return formatted;
+            }
+            
+            // 合并嵌套的span标签
+            function mergeNestedSpans(html) {
+                // 创建一个临时的DOM元素来解析HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                
+                // 递归处理所有嵌套的span
+                function processNode(node) {
+                    // 如果不是元素节点，直接返回
+                    if (node.nodeType !== Node.ELEMENT_NODE) return;
+                    
+                    // 处理子节点
+                    const childNodes = Array.from(node.childNodes);
+                    for (const child of childNodes) {
+                        processNode(child);
+                    }
+                    
+                    // 如果当前节点是span并且有一个span子节点
+                    if (node.tagName === 'SPAN' && node.childNodes.length === 1 && 
+                        node.firstChild.nodeType === Node.ELEMENT_NODE && 
+                        node.firstChild.tagName === 'SPAN') {
+                        
+                        const childSpan = node.firstChild;
+                        
+                        // 合并样式
+                        const parentStyle = node.getAttribute('style') || '';
+                        const childStyle = childSpan.getAttribute('style') || '';
+                        
+                        // 将子span的内容移到父span
+                        while (childSpan.firstChild) {
+                            node.appendChild(childSpan.firstChild);
+                        }
+                        
+                        // 设置合并后的样式
+                        node.setAttribute('style', combineStyles(parentStyle, childStyle));
+                        
+                        // 移除空的子span
+                        node.removeChild(childSpan);
+                    }
+                }
+                
+                // 合并CSS样式字符串
+                function combineStyles(style1, style2) {
+                    const styleMap = {};
+                    
+                    // 解析第一个样式字符串
+                    style1.split(';').forEach(item => {
+                        const [property, value] = item.split(':').map(s => s.trim());
+                        if (property && value) {
+                            styleMap[property] = value;
+                        }
+                    });
+                    
+                    // 解析第二个样式字符串
+                    style2.split(';').forEach(item => {
+                        const [property, value] = item.split(':').map(s => s.trim());
+                        if (property && value) {
+                            styleMap[property] = value;
+                        }
+                    });
+                    
+                    // 构建合并后的样式字符串
+                    return Object.entries(styleMap)
+                        .map(([property, value]) => `${property}: ${value}`)
+                        .join('; ');
+                }
+                
+                // 处理根节点
+                processNode(tempDiv);
+                
+                // 返回处理后的HTML
+                return tempDiv.innerHTML;
+            }
+            
+            // 监听文本编辑器的输入事件
+            textEditor.addEventListener('input', updateHTMLPreview);
+            
+            // 处理格式按钮点击
+            boldBtn.addEventListener('click', () => {
+                document.execCommand('styleWithCSS', false, true);
+                document.execCommand('bold', false, null);
+                updateHTMLPreview();
+            });
+            
+            italicBtn.addEventListener('click', () => {
+                document.execCommand('styleWithCSS', false, true);
+                document.execCommand('italic', false, null);
+                updateHTMLPreview();
+            });
+            
+            underlineBtn.addEventListener('click', () => {
+                document.execCommand('styleWithCSS', false, true);
+                document.execCommand('underline', false, null);
+                updateHTMLPreview();
+            });
+            
+            strikeBtn.addEventListener('click', () => {
+                document.execCommand('styleWithCSS', false, true);
+                document.execCommand('strikeThrough', false, null);
+                updateHTMLPreview();
+            });
+            
+            // 处理字体选择
+            fontFamily.addEventListener('change', () => {
+                document.execCommand('styleWithCSS', false, true);
+                document.execCommand('fontName', false, fontFamily.value);
+                updateHTMLPreview();
+            });
+            
+            // 处理字号选择
+            fontSize.addEventListener('change', () => {
+                document.execCommand('styleWithCSS', false, true);
+                
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    // 创建一个span元素并设置样式
+                    const span = document.createElement('span');
+                    span.style.fontSize = `${fontSize.value}px`;
+                    
+                    // 获取选中的范围
+                    const range = selection.getRangeAt(0);
+                    
+                    // 如果没有选中文本，不执行任何操作
+                    if (range.collapsed) return;
+                    
+                    // 将span应用到选中的文本
+                    const content = range.extractContents();
+                    span.appendChild(content);
+                    range.insertNode(span);
+                    
+                    // 更新选区以包含新的span
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+                updateHTMLPreview();
+            });
+            
+            // 处理文字颜色
+            textColor.addEventListener('input', () => {
+                document.execCommand('styleWithCSS', false, true);
+                
+                const rgb = hexToRgb(textColor.value);
+                document.execCommand('foreColor', false, `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`);
+                updateHTMLPreview();
+            });
+            
+            // 处理背景颜色
+            bgColor.addEventListener('input', () => {
+                document.execCommand('styleWithCSS', false, true);
+                
+                const rgb = hexToRgb(bgColor.value);
+                document.execCommand('hiliteColor', false, `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`);
+                updateHTMLPreview();
+            });
+            
+            // 清除格式但保留文本
+            clearBtn.addEventListener('click', () => {
+                // 保存当前文本内容
+                const textContent = textEditor.textContent;
+                
+                // 清除所有格式
+                document.execCommand('selectAll', false, null);
+                document.execCommand('removeFormat', false, null);
+                
+                // 如果文本被清空，则恢复原始文本（无格式）
+                if (textEditor.textContent.trim() === '') {
+                    textEditor.textContent = textContent;
+                }
+                
+                updateHTMLPreview();
+            });
+            
+            // 处理换行
+            textEditor.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.execCommand('insertHTML', false, '<br>');
+                    updateHTMLPreview();
+                }
+            });
+            
+            // 复制HTML代码
+            copyBtn.addEventListener('click', () => {
+                const textArea = document.createElement('textarea');
+                textArea.value = htmlPreview.textContent;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // 显示复制成功提示
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '复制成功！';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            });
+            
+            // 将十六进制颜色转换为RGB
+            function hexToRgb(hex) {
+                // 移除可能的#前缀
+                hex = hex.replace(/^#/, '');
+                
+                // 处理简写形式 (#rgb)
+                if (hex.length === 3) {
+                    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+                }
+                
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                
+                return { r, g, b };
+            }
+            
+            // 初始化时启用styleWithCSS
+            document.execCommand('styleWithCSS', false, true);
+        });
+    </script>
+</body>
+</html>

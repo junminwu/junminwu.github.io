@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI SVG边框工具</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #95a5a6;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+            padding-top: 20px;
+        }
+
+        .settings-panel {
+            flex: 1;
+            padding: 25px;
+            border-right: 1px solid #e1e5eb;
+            background-color: #f9fafc;
+        }
+        
+        .code-panel {
+            flex: 1;
+            padding: 25px;
+            background-color: #ffffff;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e1e5eb;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+        }
+        
+        input[type='range'], 
+        input[type='color'],
+        input[type='text'],
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 14px;
+        }
+        
+        input[type='range'] {
+            padding: 0;
+        }
+        
+        .range-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .preview-container {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px dashed #d1d5db;
+            border-radius: 8px;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+        }
+        
+        .preview-box {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .code-container {
+            position: relative;
+            margin-top: 20px;
+            border: 1px solid #e1e5eb;
+            border-radius: 4px;
+            background-color: #f8fafc;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #334155;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .code-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-copy {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .btn-copy:hover {
+            background-color: #2563eb;
+        }
+        
+        .btn-download {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .btn-download:hover {
+            background-color: #059669;
+        }
+        
+        .settings-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .settings-row > div {
+            flex: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .settings-panel {
+                border-right: none;
+                border-bottom: 1px solid #e1e5eb;
+            }
+            
+            .settings-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="settings-panel">
+            <h1>Power BI SVG边框工具</h1>
+            
+            <div class="settings-row">
+                <div class="form-group">
+                    <label for="width">宽度 (px): <span id="widthValue" class="range-value">300</span></label>
+                    <input type="range" id="width" min="100" max="800" value="300">
+                </div>
+                
+                <div class="form-group">
+                    <label for="height">高度 (px): <span id="heightValue" class="range-value">200</span></label>
+                    <input type="range" id="height" min="50" max="600" value="200">
+                </div>
+                
+                <div class="form-group">
+                    <label for="borderColor">边框颜色:</label>
+                    <input type="color" id="borderColor" value="#3b82f6">
+                </div>
+            </div>
+            
+            <div class="settings-row">
+                <div class="form-group">
+                    <label for="borderWidth">边框粗细 (px): <span id="borderWidthValue" class="range-value">4</span></label>
+                    <input type="range" id="borderWidth" min="1" max="20" value="4">
+                </div>
+                
+                <div class="form-group">
+                    <label for="borderRadius">圆角 (px): <span id="borderRadiusValue" class="range-value">10</span></label>
+                    <input type="range" id="borderRadius" min="0" max="150" value="10">
+                </div>
+                
+                <div class="form-group">
+                    <label for="borderType">边框类型:</label>
+                    <select id="borderType">
+                        <option value="solid">实线</option>
+                        <option value="dashed">虚线</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="settings-row">
+                <div class="form-group">
+                    <label for="gradientType">渐变效果:</label>
+                    <select id="gradientType">
+                        <option value="none">无</option>
+                        <option value="linear">有</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="gradientColor">渐变颜色:</label>
+                    <input type="color" id="gradientColor" value="#10b981">
+                </div>
+                
+                <div class="form-group">
+                    <label for="animation">动画效果:</label>
+                    <select id="animation">
+                        <option value="none">无</option>
+                        <option value="flow">流动</option>
+                        <option value="blink">闪烁</option>
+                        <option value="shimmer">呼吸</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="preview-container">
+                <div class="preview-box">
+                    <svg id="previewSvg" width="300" height="200" xmlns='http://www.w3.org/2000/svg'>
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#3b82f6"/>
+                                <stop offset="100%" stop-color="#10b981"/>
+                            </linearGradient>
+                        </defs>
+                        <rect id="previewRect" x='2' y='2' width='296' height='196' rx='10' stroke='url(#gradient)' stroke-width='4' fill='none'/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="code-panel">
+            <h1>SVG代码</h1>
+            
+            <div class="code-actions">
+                <button class="btn-copy" id="copyBtn">复制代码（DAX专用）</button>
+                <button class="btn-download" id="downloadBtn">下载SVG图片</button>
+            </div>
+            
+            <div class="code-container" id="codeOutput">
+                &lt;svg width='300' height='200' xmlns='http://www.w3.org/2000/svg' id='wujunmin'&gt;
+                    &lt;defs&gt;
+                        &lt;linearGradient id='gradient' x1='0%' y1='0%' x2='100%' y2='0%'&gt;
+                            &lt;stop offset='0%' stop-color='rgb(59, 130, 246)'/&gt;
+                            &lt;stop offset='100%' stop-color='rgb(16, 185, 129)'/&gt;
+                        &lt;/linearGradient&gt;
+                    &lt;/defs&gt;
+                    &lt;rect x='2' y='2' width='296' height='196' rx='10' stroke='url(#gradient)' stroke-width='4' fill='none'/&gt;
+                &lt;/svg&gt;
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <a href="http://junminwu.github.io" target="_blank">wujunmin出品</a>
+    </footer>
+
+    <script>
+        // 获取DOM元素
+        const widthInput = document.getElementById('width');
+        const heightInput = document.getElementById('height');
+        const borderColorInput = document.getElementById('borderColor');
+        const borderWidthInput = document.getElementById('borderWidth');
+        const borderRadiusInput = document.getElementById('borderRadius');
+        const borderTypeInput = document.getElementById('borderType');
+        const gradientTypeInput = document.getElementById('gradientType');
+        const gradientColorInput = document.getElementById('gradientColor');
+        const animationInput = document.getElementById('animation');
+        
+        const widthValue = document.getElementById('widthValue');
+        const heightValue = document.getElementById('heightValue');
+        const borderWidthValue = document.getElementById('borderWidthValue');
+        const borderRadiusValue = document.getElementById('borderRadiusValue');
+        
+        const previewSvg = document.getElementById('previewSvg');
+        const previewRect = document.getElementById('previewRect');
+        const codeOutput = document.getElementById('codeOutput');
+        const copyBtn = document.getElementById('copyBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        // 将十六进制颜色转换为RGB格式
+        function hexToRgb(hex) {
+            // 去除#号
+            hex = hex.replace('#', '');
+            
+            // 解析RGB值
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+        
+        // 更新显示值
+        function updateValues() {
+            widthValue.textContent = widthInput.value;
+            heightValue.textContent = heightInput.value;
+            borderWidthValue.textContent = borderWidthInput.value;
+            borderRadiusValue.textContent = borderRadiusInput.value;
+        }
+        
+        // 生成SVG代码
+        function generateSvgCode() {
+            const width = widthInput.value;
+            const height = heightInput.value;
+            const borderWidth = borderWidthInput.value;
+            const halfBorder = borderWidth / 2;
+            const rectWidth = width - borderWidth;
+            const rectHeight = height - borderWidth;
+            const borderRadius = borderRadiusInput.value;
+            const borderColor = hexToRgb(borderColorInput.value);
+            const borderType = borderTypeInput.value;
+            const gradientType = gradientTypeInput.value;
+            const gradientColor = hexToRgb(gradientColorInput.value);
+            const animation = animationInput.value;
+            
+            let strokeDasharray = 'none';
+            if (borderType === 'dashed') {
+                strokeDasharray = `${borderWidth * 2}, ${borderWidth}`;
+            }
+            
+            let svgCode = `&lt;svg width='${width}' height='${height}' xmlns='http://www.w3.org/2000/svg' id='wujunmin'&gt;\n`;
+            
+            // 添加渐变定义
+            if (gradientType !== 'none') {
+                svgCode += `    &lt;defs&gt;\n`;
+                svgCode += `        &lt;linearGradient id='gradient' x1='0%' y1='0%' x2='100%' y2='0%'&gt;\n`;
+                svgCode += `            &lt;stop offset='0%' stop-color='${borderColor}'/&gt;\n`;
+                svgCode += `            &lt;stop offset='100%' stop-color='${gradientColor}'/&gt;\n`;
+                svgCode += `        &lt;/linearGradient&gt;\n`;
+                svgCode += `    &lt;/defs&gt;\n`;
+            }
+            
+            let rectAttributes = `x='${halfBorder}' y='${halfBorder}' width='${rectWidth}' height='${rectHeight}' rx='${borderRadius}' stroke='${gradientType === 'none' ? borderColor : 'url(#gradient)'}' stroke-width='${borderWidth}' fill='none'`;
+            
+            if (strokeDasharray !== 'none') {
+                rectAttributes += ` stroke-dasharray='${strokeDasharray}'`;
+            }
+            
+            svgCode += `    &lt;rect ${rectAttributes}&gt;\n`;
+            
+            // 添加动画效果
+            if (animation !== 'none') {
+                if (animation === 'flow') {
+                    svgCode += `        &lt;animate attributeName='stroke-dashoffset' values='${rectWidth*2 + rectHeight*2};0' dur='10s' repeatCount='indefinite'/&gt;\n`;
+                } else if (animation === 'blink') {
+                    svgCode += `        &lt;animate attributeName='opacity' values='1;0.3;1' dur='1.5s' repeatCount='indefinite'/&gt;\n`;
+                } else if (animation === 'shimmer') {
+                    svgCode += `        &lt;animate attributeName='stroke-width' values='${borderWidth};${borderWidth*1.5};${borderWidth}' dur='10s' repeatCount='indefinite'/&gt;\n`;
+                    svgCode += `        &lt;animate attributeName='stroke-opacity' values='1;0.7;1' dur='2s' repeatCount='indefinite'/&gt;\n`;
+                }
+            }
+            
+            svgCode += `    &lt;/rect&gt;\n`;
+            svgCode += `&lt;/svg&gt;`;
+            
+            return svgCode;
+        }
+        
+        // 更新预览和代码
+        function updatePreview() {
+            updateValues();
+            
+            const width = widthInput.value;
+            const height = heightInput.value;
+            const borderWidth = borderWidthInput.value;
+            const halfBorder = borderWidth / 2;
+            const rectWidth = width - borderWidth;
+            const rectHeight = height - borderWidth;
+            const borderRadius = borderRadiusInput.value;
+            const borderColor = borderColorInput.value;
+            const borderType = borderTypeInput.value;
+            const gradientType = gradientTypeInput.value;
+            const gradientColor = gradientColorInput.value;
+            const animation = animationInput.value;
+            
+            // 更新SVG预览
+            previewSvg.setAttribute('width', width);
+            previewSvg.setAttribute('height', height);
+            previewSvg.setAttribute('id', 'wujunmin');
+            
+            // 清除所有现有的渐变和动画元素
+            const existingDefs = previewSvg.querySelector('defs');
+            if (existingDefs) {
+                previewSvg.removeChild(existingDefs);
+            }
+            
+            const existingAnimations = previewSvg.querySelectorAll('animate, animateTransform');
+            existingAnimations.forEach(el => el.remove());
+            
+            // 添加渐变定义
+            if (gradientType !== 'none') {
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                let gradient;
+                
+                if (gradientType === 'linear') {
+                    gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                    gradient.setAttribute('x1', '0%');
+                    gradient.setAttribute('y1', '0%');
+                    gradient.setAttribute('x2', '100%');
+                    gradient.setAttribute('y2', '0%');
+                }
+                
+                gradient.setAttribute('id', 'gradient');
+                
+                const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop1.setAttribute('offset', '0%');
+                stop1.setAttribute('stop-color', borderColor);
+                
+                const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop2.setAttribute('offset', '100%');
+                stop2.setAttribute('stop-color', gradientColor);
+                
+                gradient.appendChild(stop1);
+                gradient.appendChild(stop2);
+                defs.appendChild(gradient);
+                previewSvg.insertBefore(defs, previewRect);
+            }
+            
+            // 更新矩形属性
+            previewRect.setAttribute('x', halfBorder);
+            previewRect.setAttribute('y', halfBorder);
+            previewRect.setAttribute('width', rectWidth);
+            previewRect.setAttribute('height', rectHeight);
+            previewRect.setAttribute('rx', borderRadius);
+            previewRect.setAttribute('stroke', gradientType === 'none' ? borderColor : 'url(#gradient)');
+            previewRect.setAttribute('stroke-width', borderWidth);
+            
+            // 处理边框类型
+            if (borderType === 'solid') {
+                previewRect.removeAttribute('stroke-dasharray');
+            } else if (borderType === 'dashed') {
+                previewRect.setAttribute('stroke-dasharray', `${borderWidth * 2}, ${borderWidth}`);
+            }
+            
+            // 添加动画效果
+            if (animation !== 'none') {
+                if (animation === 'flow') {
+                    const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                    animate.setAttribute('attributeName', 'stroke-dashoffset');
+                    animate.setAttribute('values', `${rectWidth*2 + rectHeight*2};0`);
+                    animate.setAttribute('dur', '10s');
+                    animate.setAttribute('repeatCount', 'indefinite');
+                    previewRect.appendChild(animate);
+                    
+                    // 确保有stroke-dasharray属性
+                    if (!previewRect.hasAttribute('stroke-dasharray')) {
+                        previewRect.setAttribute('stroke-dasharray', `${rectWidth*2 + rectHeight*2}`);
+                    }
+                } else if (animation === 'blink') {
+                    const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                    animate.setAttribute('attributeName', 'opacity');
+                    animate.setAttribute('values', '1;0.3;1');
+                    animate.setAttribute('dur', '1.5s');
+                    animate.setAttribute('repeatCount', 'indefinite');
+                    previewRect.appendChild(animate);
+                } else if (animation === 'shimmer') {
+                    const animate1 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                    animate1.setAttribute('attributeName', 'stroke-width');
+                    animate1.setAttribute('values', `${borderWidth};${borderWidth*1.5};${borderWidth}`);
+                    animate1.setAttribute('dur', '2s');
+                    animate1.setAttribute('repeatCount', 'indefinite');
+                    previewRect.appendChild(animate1);
+                    
+                    const animate2 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                    animate2.setAttribute('attributeName', 'stroke-opacity');
+                    animate2.setAttribute('values', '1;0.7;1');
+                    animate2.setAttribute('dur', '2s');
+                    animate2.setAttribute('repeatCount', 'indefinite');
+                    previewRect.appendChild(animate2);
+                }
+            }
+            
+            // 更新代码显示
+            codeOutput.innerHTML = generateSvgCode();
+        }
+        
+        // 复制代码
+        copyBtn.addEventListener('click', () => {
+            const code = codeOutput.textContent.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+            const dataUri = `data:image/svg+xml;utf8,${code}`;
+            navigator.clipboard.writeText(dataUri).then(() => {
+                copyBtn.textContent = '已复制!';
+                setTimeout(() => {
+                    copyBtn.textContent = '复制代码';
+                }, 2000);
+            });
+        });
+        
+        // 下载SVG
+        downloadBtn.addEventListener('click', () => {
+            const code = codeOutput.textContent.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+            const blob = new Blob([code], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'svg-border.svg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        
+        // 添加事件监听器
+        widthInput.addEventListener('input', updatePreview);
+        heightInput.addEventListener('input', updatePreview);
+        borderColorInput.addEventListener('input', updatePreview);
+        borderWidthInput.addEventListener('input', updatePreview);
+        borderRadiusInput.addEventListener('input', updatePreview);
+        borderTypeInput.addEventListener('change', updatePreview);
+        gradientTypeInput.addEventListener('change', updatePreview);
+        gradientColorInput.addEventListener('input', updatePreview);
+        animationInput.addEventListener('change', updatePreview);
+        
+        // 初始化
+        updatePreview();
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Power BI SVG边框工具</title>
+    <title>Power BI SVG 边框工具</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -188,34 +188,34 @@
 <body>
     <div class="container">
         <div class="settings-panel">
-            <h1>Power BI SVG边框工具</h1>
+            <h1>Power BI SVG 边框工具</h1>
             
             <div class="settings-row">
                 <div class="form-group">
                     <label for="width">宽度 (px): <span id="widthValue" class="range-value">300</span></label>
-                    <input type="range" id="width" min="100" max="800" value="300">
+                    <input type="range" id="width", min="100", max="800", value="300">
                 </div>
                 
                 <div class="form-group">
                     <label for="height">高度 (px): <span id="heightValue" class="range-value">200</span></label>
-                    <input type="range" id="height" min="50" max="600" value="200">
+                    <input type="range" id="height", min="50", max="600", value="200">
                 </div>
                 
                 <div class="form-group">
                     <label for="borderColor">边框颜色:</label>
-                    <input type="color" id="borderColor" value="#3b82f6">
+                    <input type="color" id="borderColor", value="#3b82f6">
                 </div>
             </div>
             
             <div class="settings-row">
                 <div class="form-group">
                     <label for="borderWidth">边框粗细 (px): <span id="borderWidthValue" class="range-value">4</span></label>
-                    <input type="range" id="borderWidth" min="1" max="20" value="4">
+                    <input type="range" id="borderWidth", min="1", max="20", value="4">
                 </div>
                 
                 <div class="form-group">
                     <label for="borderRadius">圆角 (px): <span id="borderRadiusValue" class="range-value">10</span></label>
-                    <input type="range" id="borderRadius" min="0" max="150" value="10">
+                    <input type="range" id="borderRadius", min="0", max="150", value="10">
                 </div>
                 
                 <div class="form-group">
@@ -223,6 +223,8 @@
                     <select id="borderType">
                         <option value="solid">实线</option>
                         <option value="dashed">虚线</option>
+                        <option value="dotted">点线</option>
+                        <option value="handdrawn">手绘</option>
                     </select>
                 </div>
             </div>
@@ -238,7 +240,7 @@
                 
                 <div class="form-group">
                     <label for="gradientColor">渐变颜色:</label>
-                    <input type="color" id="gradientColor" value="#10b981">
+                    <input type="color" id="gradientColor", value="#10b981">
                 </div>
                 
                 <div class="form-group">
@@ -248,6 +250,7 @@
                         <option value="flow">流动</option>
                         <option value="blink">闪烁</option>
                         <option value="shimmer">呼吸</option>
+                        <option value="neon">霓虹灯</option>
                     </select>
                 </div>
             </div>
@@ -260,6 +263,10 @@
                                 <stop offset="0%" stop-color="#3b82f6"/>
                                 <stop offset="100%" stop-color="#10b981"/>
                             </linearGradient>
+                            <filter id="neon-glow" height="300%" width="300%" x="-75%" y="-75%">
+                                <feGaussianBlur stdDeviation="5" result="blur"></feGaussianBlur>
+                                <feComposite in="SourceGraphic" in2="blur" operator="over"></feComposite>
+                            </filter>
                         </defs>
                         <rect id="previewRect" x='2' y='2' width='296' height='196' rx='10' stroke='url(#gradient)' stroke-width='4' fill='none'/>
                     </svg>
@@ -282,6 +289,10 @@
                             &lt;stop offset='0%' stop-color='rgb(59, 130, 246)'/&gt;
                             &lt;stop offset='100%' stop-color='rgb(16, 185, 129)'/&gt;
                         &lt;/linearGradient&gt;
+                        &lt;filter id='neon-glow' height='300%' width='300%' x='-75%' y='-75%'&gt;
+                            &lt;feGaussianBlur stdDeviation='5' result='blur'&gt;&lt;/feGaussianBlur&gt;
+                            &lt;feComposite in='SourceGraphic' in2='blur' operator='over'&gt;&lt;/feComposite&gt;
+                        &lt;/filter&gt;
                     &lt;/defs&gt;
                     &lt;rect x='2' y='2' width='296' height='196' rx='10' stroke='url(#gradient)' stroke-width='4' fill='none'/&gt;
                 &lt;/svg&gt;
@@ -329,6 +340,44 @@
             return `rgb(${r}, ${g}, ${b})`;
         }
         
+        // 生成手绘路径（四条边）
+        function generateHandDrawnPath(x, y, width, height, roughness) {
+            const segments = 20;
+            const segmentWidth = width / segments;
+            const segmentHeight = height / segments;
+            
+            // 上边
+            let pathData = `M${x},${y + roughness * (Math.random() - 0.5)}`;
+            for (let i = 1; i <= segments; i++) {
+                const nextX = x + i * segmentWidth;
+                const nextY = y + roughness * (Math.random() - 0.5);
+                pathData += ` L${nextX},${nextY}`;
+            }
+            
+            // 右边
+            for (let i = 1; i <= segments; i++) {
+                const nextX = x + width + roughness * (Math.random() - 0.5);
+                const nextY = y + i * segmentHeight;
+                pathData += ` L${nextX},${nextY}`;
+            }
+            
+            // 下边
+            for (let i = segments - 1; i >= 0; i--) {
+                const nextX = x + i * segmentWidth;
+                const nextY = y + height + roughness * (Math.random() - 0.5);
+                pathData += ` L${nextX},${nextY}`;
+            }
+            
+            // 左边
+            for (let i = segments - 1; i >= 0; i--) {
+                const nextX = x + roughness * (Math.random() - 0.5);
+                const nextY = y + i * segmentHeight;
+                pathData += ` L${nextX},${nextY}`;
+            }
+            
+            return pathData + ' Z';
+        }
+        
         // 更新显示值
         function updateValues() {
             widthValue.textContent = widthInput.value;
@@ -355,41 +404,100 @@
             let strokeDasharray = 'none';
             if (borderType === 'dashed') {
                 strokeDasharray = `${borderWidth * 2}, ${borderWidth}`;
+            } else if (borderType === 'dotted') {
+                strokeDasharray = `${borderWidth}, ${borderWidth}`;  // 修复点线显示问题
             }
             
             let svgCode = `&lt;svg width='${width}' height='${height}' xmlns='http://www.w3.org/2000/svg' id='wujunmin'&gt;\n`;
             
+            // 添加defs部分
+            svgCode += `    &lt;defs&gt;\n`;
+            
             // 添加渐变定义
             if (gradientType !== 'none') {
-                svgCode += `    &lt;defs&gt;\n`;
                 svgCode += `        &lt;linearGradient id='gradient' x1='0%' y1='0%' x2='100%' y2='0%'&gt;\n`;
                 svgCode += `            &lt;stop offset='0%' stop-color='${borderColor}'/&gt;\n`;
                 svgCode += `            &lt;stop offset='100%' stop-color='${gradientColor}'/&gt;\n`;
                 svgCode += `        &lt;/linearGradient&gt;\n`;
-                svgCode += `    &lt;/defs&gt;\n`;
             }
             
-            let rectAttributes = `x='${halfBorder}' y='${halfBorder}' width='${rectWidth}' height='${rectHeight}' rx='${borderRadius}' stroke='${gradientType === 'none' ? borderColor : 'url(#gradient)'}' stroke-width='${borderWidth}' fill='none'`;
-            
-            if (strokeDasharray !== 'none') {
-                rectAttributes += ` stroke-dasharray='${strokeDasharray}'`;
+            // 添加霓虹灯滤镜
+            if (animation === 'neon') {
+                svgCode += `        &lt;filter id='neon-glow' height='300%' width='300%' x='-75%' y='-75%'&gt;\n`;
+                svgCode += `            &lt;feGaussianBlur stdDeviation='5' result='blur'&gt;&lt;/feGaussianBlur&gt;\n`;
+                svgCode += `            &lt;feComposite in='SourceGraphic' in2='blur' operator='over'&gt;&lt;/feComposite&gt;\n`;
+                svgCode += `        &lt;/filter&gt;\n`;
             }
             
-            svgCode += `    &lt;rect ${rectAttributes}&gt;\n`;
+            svgCode += `    &lt;/defs&gt;\n`;
             
-            // 添加动画效果
-            if (animation !== 'none') {
-                if (animation === 'flow') {
-                    svgCode += `        &lt;animate attributeName='stroke-dashoffset' values='${rectWidth*2 + rectHeight*2};0' dur='10s' repeatCount='indefinite'/&gt;\n`;
-                } else if (animation === 'blink') {
-                    svgCode += `        &lt;animate attributeName='opacity' values='1;0.3;1' dur='1.5s' repeatCount='indefinite'/&gt;\n`;
-                } else if (animation === 'shimmer') {
-                    svgCode += `        &lt;animate attributeName='stroke-width' values='${borderWidth};${borderWidth*1.5};${borderWidth}' dur='10s' repeatCount='indefinite'/&gt;\n`;
-                    svgCode += `        &lt;animate attributeName='stroke-opacity' values='1;0.7;1' dur='2s' repeatCount='indefinite'/&gt;\n`;
+            // 处理不同类型的边框
+            if (borderType === 'handdrawn') {
+                const roughness = 3;
+                const pathData = generateHandDrawnPath(halfBorder, halfBorder, rectWidth, rectHeight, roughness);
+                
+                svgCode += `    &lt;path d='${pathData}' stroke='${gradientType === 'none' ? borderColor : 'url(#gradient)'}' stroke-width='${borderWidth}' fill='none' ${strokeDasharray !== 'none' ? `stroke-dasharray='${strokeDasharray}'` : ''} ${animation === 'neon' ? "filter='url(#neon-glow)'" : ""}`;
+                
+                // 添加动画效果
+                if (animation !== 'none') {
+                    svgCode += `&gt;\n`;
+                    
+                    if (animation === 'flow') {
+                        const perimeter = (rectWidth + rectHeight) * 2;
+                        svgCode += `        &lt;animate attributeName='stroke-dashoffset' values='${perimeter};0' dur='${borderType === 'dashed' ? '20s' : '10s'}' repeatCount='indefinite'/&gt;\n`;
+                        svgCode += `        &lt;animate attributeName='stroke-dasharray' values='${borderType === 'dashed' ? strokeDasharray : perimeter};${borderType === 'dashed' ? strokeDasharray : perimeter}' dur='${borderType === 'dashed' ? '20s' : '10s'}' repeatCount='indefinite'/&gt;\n`;
+                    } else if (animation === 'blink') {
+                        svgCode += `        &lt;animate attributeName='opacity' values='1;0.3;1' dur='1.5s' repeatCount='indefinite'/&gt;\n`;
+                    } else if (animation === 'shimmer') {
+                        svgCode += `        &lt;animate attributeName='stroke-width' values='${borderWidth};${borderWidth*1.5};${borderWidth}' dur='2s' repeatCount='indefinite'/&gt;\n`;
+                        svgCode += `        &lt;animate attributeName='stroke-opacity' values='1;0.7;1' dur='2s' repeatCount='indefinite'/&gt;\n`;
+                    } else if (animation === 'neon') {
+                        svgCode += `        &lt;animate attributeName='stroke-opacity' values='0.7;1;0.7' dur='2s' repeatCount='indefinite'/&gt;\n`;
+                        svgCode += `        &lt;animate attributeName='stroke-width' values='${borderWidth};${borderWidth*1.2};${borderWidth}' dur='2s' repeatCount='indefinite'/&gt;\n`;
+                    }
+                    
+                    svgCode += `    &lt;/path&gt;\n`;
+                } else {
+                    svgCode += `/&gt;\n`;
+                }
+            }
+            else {
+                let rectAttributes = `x='${halfBorder}' y='${halfBorder}' width='${rectWidth}' height='${rectHeight}' rx='${borderRadius}' stroke='${gradientType === 'none' ? borderColor : 'url(#gradient)'}' stroke-width='${borderWidth}' fill='none'`;
+                
+                if (strokeDasharray !== 'none') {
+                    rectAttributes += ` stroke-dasharray='${strokeDasharray}'`;
+                }
+                
+                if (animation === 'neon') {
+                    rectAttributes += ` filter='url(#neon-glow)'`;
+                }
+                
+                svgCode += `    &lt;rect ${rectAttributes}`;
+                
+                // 添加动画效果
+                if (animation !== 'none') {
+                    svgCode += `&gt;\n`;
+                    
+                    if (animation === 'flow') {
+                        const perimeter = (rectWidth + rectHeight) * 2;
+                        svgCode += `        &lt;animate attributeName='stroke-dashoffset' values='${perimeter};0' dur='${borderType === 'dashed' ? '20s' : '10s'}' repeatCount='indefinite'/&gt;\n`;
+                        svgCode += `        &lt;animate attributeName='stroke-dasharray' values='${borderType === 'dashed' ? strokeDasharray : perimeter};${borderType === 'dashed' ? strokeDasharray : perimeter}' dur='${borderType === 'dashed' ? '20s' : '10s'}' repeatCount='indefinite'/&gt;\n`;
+                    } else if (animation === 'blink') {
+                        svgCode += `        &lt;animate attributeName='opacity' values='1;0.3;1' dur='1.5s' repeatCount='indefinite'/&gt;\n`;
+                    } else if (animation === 'shimmer') {
+                        svgCode += `        &lt;animate attributeName='stroke-width' values='${borderWidth};${borderWidth*1.5};${borderWidth}' dur='2s' repeatCount='indefinite'/&gt;\n`;
+                        svgCode += `        &lt;animate attributeName='stroke-opacity' values='1;0.7;1' dur='2s' repeatCount='indefinite'/&gt;\n`;
+                    } else if (animation === 'neon') {
+                        svgCode += `        &lt;animate attributeName='stroke-opacity' values='0.7;1;0.7' dur='2s' repeatCount='indefinite'/&gt;\n`;
+                        svgCode += `        &lt;animate attributeName='stroke-width' values='${borderWidth};${borderWidth*1.2};${borderWidth}' dur='2s' repeatCount='indefinite'/&gt;\n`;
+                    }
+                    
+                    svgCode += `    &lt;/rect&gt;\n`;
+                } else {
+                    svgCode += `/&gt;\n`;
                 }
             }
             
-            svgCode += `    &lt;/rect&gt;\n`;
             svgCode += `&lt;/svg&gt;`;
             
             return svgCode;
@@ -417,29 +525,23 @@
             previewSvg.setAttribute('height', height);
             previewSvg.setAttribute('id', 'wujunmin');
             
-            // 清除所有现有的渐变和动画元素
-            const existingDefs = previewSvg.querySelector('defs');
-            if (existingDefs) {
-                previewSvg.removeChild(existingDefs);
+            // 清除所有现有的元素
+            while (previewSvg.firstChild) {
+                previewSvg.removeChild(previewSvg.firstChild);
             }
             
-            const existingAnimations = previewSvg.querySelectorAll('animate, animateTransform');
-            existingAnimations.forEach(el => el.remove());
+            // 重新创建defs
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            previewSvg.appendChild(defs);
             
             // 添加渐变定义
             if (gradientType !== 'none') {
-                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-                let gradient;
-                
-                if (gradientType === 'linear') {
-                    gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-                    gradient.setAttribute('x1', '0%');
-                    gradient.setAttribute('y1', '0%');
-                    gradient.setAttribute('x2', '100%');
-                    gradient.setAttribute('y2', '0%');
-                }
-                
+                const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
                 gradient.setAttribute('id', 'gradient');
+                gradient.setAttribute('x1', '0%');
+                gradient.setAttribute('y1', '0%');
+                gradient.setAttribute('x2', '100%');
+                gradient.setAttribute('y2', '0%');
                 
                 const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
                 stop1.setAttribute('offset', '0%');
@@ -452,60 +554,195 @@
                 gradient.appendChild(stop1);
                 gradient.appendChild(stop2);
                 defs.appendChild(gradient);
-                previewSvg.insertBefore(defs, previewRect);
             }
             
-            // 更新矩形属性
-            previewRect.setAttribute('x', halfBorder);
-            previewRect.setAttribute('y', halfBorder);
-            previewRect.setAttribute('width', rectWidth);
-            previewRect.setAttribute('height', rectHeight);
-            previewRect.setAttribute('rx', borderRadius);
-            previewRect.setAttribute('stroke', gradientType === 'none' ? borderColor : 'url(#gradient)');
-            previewRect.setAttribute('stroke-width', borderWidth);
-            
-            // 处理边框类型
-            if (borderType === 'solid') {
-                previewRect.removeAttribute('stroke-dasharray');
-            } else if (borderType === 'dashed') {
-                previewRect.setAttribute('stroke-dasharray', `${borderWidth * 2}, ${borderWidth}`);
+            // 添加霓虹灯滤镜
+            if (animation === 'neon') {
+                const filter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+                filter.setAttribute('id', 'neon-glow');
+                filter.setAttribute('height', '300%');
+                filter.setAttribute('width', '300%');
+                filter.setAttribute('x', '-75%');
+                filter.setAttribute('y', '-75%');
+                
+                const blur = document.createElementNS('http://www.w3.org/2000/svg', 'feGaussianBlur');
+                blur.setAttribute('stdDeviation', '5');
+                blur.setAttribute('result', 'blur');
+                
+                const composite = document.createElementNS('http://www.w3.org/2000/svg', 'feComposite');
+                composite.setAttribute('in', 'SourceGraphic');
+                composite.setAttribute('in2', 'blur');
+                composite.setAttribute('operator', 'over');
+                
+                filter.appendChild(blur);
+                filter.appendChild(composite);
+                defs.appendChild(filter);
             }
             
-            // 添加动画效果
-            if (animation !== 'none') {
-                if (animation === 'flow') {
-                    const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-                    animate.setAttribute('attributeName', 'stroke-dashoffset');
-                    animate.setAttribute('values', `${rectWidth*2 + rectHeight*2};0`);
-                    animate.setAttribute('dur', '10s');
-                    animate.setAttribute('repeatCount', 'indefinite');
-                    previewRect.appendChild(animate);
-                    
-                    // 确保有stroke-dasharray属性
-                    if (!previewRect.hasAttribute('stroke-dasharray')) {
-                        previewRect.setAttribute('stroke-dasharray', `${rectWidth*2 + rectHeight*2}`);
+            // 处理不同类型的边框
+            if (borderType === 'handdrawn') {
+                const roughness = 3;
+                const pathData = generateHandDrawnPath(halfBorder, halfBorder, rectWidth, rectHeight, roughness);
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', pathData);
+                path.setAttribute('stroke', gradientType === 'none' ? borderColor : 'url(#gradient)');
+                path.setAttribute('stroke-width', borderWidth);
+                path.setAttribute('fill', 'none');
+                
+                if (borderType === 'dashed' || borderType === 'dotted') {
+                    let dasharray = '';
+                    if (borderType === 'dashed') {
+                        dasharray = `${borderWidth * 2}, ${borderWidth}`;
+                    } else if (borderType === 'dotted') {
+                        dasharray = `${borderWidth}, ${borderWidth}`;
                     }
-                } else if (animation === 'blink') {
-                    const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-                    animate.setAttribute('attributeName', 'opacity');
-                    animate.setAttribute('values', '1;0.3;1');
-                    animate.setAttribute('dur', '1.5s');
-                    animate.setAttribute('repeatCount', 'indefinite');
-                    previewRect.appendChild(animate);
-                } else if (animation === 'shimmer') {
-                    const animate1 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-                    animate1.setAttribute('attributeName', 'stroke-width');
-                    animate1.setAttribute('values', `${borderWidth};${borderWidth*1.5};${borderWidth}`);
-                    animate1.setAttribute('dur', '2s');
-                    animate1.setAttribute('repeatCount', 'indefinite');
-                    previewRect.appendChild(animate1);
-                    
-                    const animate2 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-                    animate2.setAttribute('attributeName', 'stroke-opacity');
-                    animate2.setAttribute('values', '1;0.7;1');
-                    animate2.setAttribute('dur', '2s');
-                    animate2.setAttribute('repeatCount', 'indefinite');
-                    previewRect.appendChild(animate2);
+                    path.setAttribute('stroke-dasharray', dasharray);
+                }
+                
+                if (animation === 'neon') {
+                    path.setAttribute('filter', 'url(#neon-glow)');
+                }
+                
+                previewSvg.appendChild(path);
+                
+                // 添加动画效果
+                if (animation !== 'none') {
+                    if (animation === 'flow') {
+                        const perimeter = (rectWidth + rectHeight) * 2;
+                        
+                        const animate1 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate1.setAttribute('attributeName', 'stroke-dashoffset');
+                        animate1.setAttribute('values', `${perimeter};0`);
+                        animate1.setAttribute('dur', borderType === 'dashed' ? '20s' : '10s');
+                        animate1.setAttribute('repeatCount', 'indefinite');
+                        path.appendChild(animate1);
+                        
+                        const animate2 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate2.setAttribute('attributeName', 'stroke-dasharray');
+                        animate2.setAttribute('values', borderType === 'dashed' ? 
+                            `${borderWidth * 2}, ${borderWidth};${borderWidth * 2}, ${borderWidth}` : 
+                            `${perimeter};${perimeter}`);
+                        animate2.setAttribute('dur', borderType === 'dashed' ? '20s' : '10s');
+                        animate2.setAttribute('repeatCount', 'indefinite');
+                        path.appendChild(animate2);
+                    } else if (animation === 'blink') {
+                        const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate.setAttribute('attributeName', 'opacity');
+                        animate.setAttribute('values', '1;0.3;1');
+                        animate.setAttribute('dur', '1.5s');
+                        animate.setAttribute('repeatCount', 'indefinite');
+                        path.appendChild(animate);
+                    } else if (animation === 'shimmer') {
+                        const animate1 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate1.setAttribute('attributeName', 'stroke-width');
+                        animate1.setAttribute('values', `${borderWidth};${borderWidth*1.5};${borderWidth}`);
+                        animate1.setAttribute('dur', '2s');
+                        animate1.setAttribute('repeatCount', 'indefinite');
+                        path.appendChild(animate1);
+                        
+                        const animate2 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate2.setAttribute('attributeName', 'stroke-opacity');
+                        animate2.setAttribute('values', '1;0.7;1');
+                        animate2.setAttribute('dur', '2s');
+                        animate2.setAttribute('repeatCount', 'indefinite');
+                        path.appendChild(animate2);
+                    } else if (animation === 'neon') {
+                        const animate1 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate1.setAttribute('attributeName', 'stroke-opacity');
+                        animate1.setAttribute('values', '0.7;1;0.7');
+                        animate1.setAttribute('dur', '2s');
+                        animate1.setAttribute('repeatCount', 'indefinite');
+                        path.appendChild(animate1);
+                        
+                        const animate2 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate2.setAttribute('attributeName', 'stroke-width');
+                        animate2.setAttribute('values', `${borderWidth};${borderWidth*1.2};${borderWidth}`);
+                        animate2.setAttribute('dur', '2s');
+                        animate2.setAttribute('repeatCount', 'indefinite');
+                        path.appendChild(animate2);
+                    }
+                }
+            }
+            else {
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', halfBorder);
+                rect.setAttribute('y', halfBorder);
+                rect.setAttribute('width', rectWidth);
+                rect.setAttribute('height', rectHeight);
+                rect.setAttribute('rx', borderRadius);
+                rect.setAttribute('stroke', gradientType === 'none' ? borderColor : 'url(#gradient)');
+                rect.setAttribute('stroke-width', borderWidth);
+                rect.setAttribute('fill', 'none');
+                
+                if (borderType === 'dashed') {
+                    rect.setAttribute('stroke-dasharray', `${borderWidth * 2}, ${borderWidth}`);
+                } else if (borderType === 'dotted') {
+                    rect.setAttribute('stroke-dasharray', `${borderWidth}, ${borderWidth}`);  // 修复点线显示问题
+                }
+                
+                if (animation === 'neon') {
+                    rect.setAttribute('filter', 'url(#neon-glow)');
+                }
+                
+                previewSvg.appendChild(rect);
+                
+                // 添加动画效果
+                if (animation !== 'none') {
+                    if (animation === 'flow') {
+                        const perimeter = (rectWidth + rectHeight) * 2;
+                        
+                        const animate1 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate1.setAttribute('attributeName', 'stroke-dashoffset');
+                        animate1.setAttribute('values', `${perimeter};0`);
+                        animate1.setAttribute('dur', borderType === 'dashed' ? '20s' : '10s');
+                        animate1.setAttribute('repeatCount', 'indefinite');
+                        rect.appendChild(animate1);
+                        
+                        const animate2 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate2.setAttribute('attributeName', 'stroke-dasharray');
+                        animate2.setAttribute('values', borderType === 'dashed' ? 
+                            `${borderWidth * 2}, ${borderWidth};${borderWidth * 2}, ${borderWidth}` : 
+                            `${perimeter};${perimeter}`);
+                        animate2.setAttribute('dur', borderType === 'dashed' ? '20s' : '10s');
+                        animate2.setAttribute('repeatCount', 'indefinite');
+                        rect.appendChild(animate2);
+                    } else if (animation === 'blink') {
+                        const animate = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate.setAttribute('attributeName', 'opacity');
+                        animate.setAttribute('values', '1;0.3;1');
+                        animate.setAttribute('dur', '1.5s');
+                        animate.setAttribute('repeatCount', 'indefinite');
+                        rect.appendChild(animate);
+                    } else if (animation === 'shimmer') {
+                        const animate1 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate1.setAttribute('attributeName', 'stroke-width');
+                        animate1.setAttribute('values', `${borderWidth};${borderWidth*1.5};${borderWidth}`);
+                        animate1.setAttribute('dur', '2s');
+                        animate1.setAttribute('repeatCount', 'indefinite');
+                        rect.appendChild(animate1);
+                        
+                        const animate2 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate2.setAttribute('attributeName', 'stroke-opacity');
+                        animate2.setAttribute('values', '1;0.7;1');
+                        animate2.setAttribute('dur', '2s');
+                        animate2.setAttribute('repeatCount', 'indefinite');
+                        rect.appendChild(animate2);
+                    } else if (animation === 'neon') {
+                        const animate1 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate1.setAttribute('attributeName', 'stroke-opacity');
+                        animate1.setAttribute('values', '0.7;1;0.7');
+                        animate1.setAttribute('dur', '2s');
+                        animate1.setAttribute('repeatCount', 'indefinite');
+                        rect.appendChild(animate1);
+                        
+                        const animate2 = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+                        animate2.setAttribute('attributeName', 'stroke-width');
+                        animate2.setAttribute('values', `${borderWidth};${borderWidth*1.2};${borderWidth}`);
+                        animate2.setAttribute('dur', '2s');
+                        animate2.setAttribute('repeatCount', 'indefinite');
+                        rect.appendChild(animate2);
+                    }
                 }
             }
             

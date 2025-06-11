@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG 转 3D 工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/SVGLoader.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #95a5a6;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+            padding-top: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #666;
+            background-color: #f9f9f9;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .control-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        label {
+            font-weight: bold;
+            color: #555;
+            white-space: nowrap;
+        }
+        input[type="range"] {
+            width: 100px;
+        }
+        input[type="color"] {
+            width: 60px;
+            height: 30px;
+            padding: 2px;
+        }
+        button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+        button:hover {
+            background-color: #0b7dda;
+        }
+        #render-container {
+            width: 800px;
+            height: 500px;
+            border: 1px solid #ddd;
+            position: relative;
+            margin: 0 auto;
+        }
+        .hidden {
+            display: none;
+        }
+        #fileInput {
+            display: none;
+        }
+        .canvas-controls {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .position-controls {
+            display: flex;
+            gap: 5px;
+        }
+        .position-btn {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SVG 转 3D 效果工具</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <p>点击或拖放 SVG 文件到此处</p>
+            <input type="file" id="fileInput" accept=".svg">
+        </div>
+        
+        <div class="controls hidden" id="controls">
+            <div class="control-item">
+                <label for="extrudeDepth">拉伸深度</label>
+                <input type="range" id="extrudeDepth" min="1" max="50" value="10">
+            </div>
+            
+            <div class="control-item">
+                <label for="materialColor">材质颜色</label>
+                <input type="color" id="materialColor" value="#ff6600">
+            </div>
+            
+            <div class="control-item">
+                <label for="lightColor">灯光颜色</label>
+                <input type="color" id="lightColor" value="#ffffff">
+            </div>
+            
+            <div class="control-item">
+                <label for="lightIntensity">灯光强度</label>
+                <input type="range" id="lightIntensity" min="0" max="2" step="0.1" value="1">
+            </div>
+            
+            <div class="control-item">
+                <label for="canvasWidth">画布宽度</label>
+                <input type="number" id="canvasWidth" min="100" max="2000" value="800" step="10">
+            </div>
+            
+            <div class="control-item">
+                <label for="canvasHeight">画布高度</label>
+                <input type="number" id="canvasHeight" min="100" max="2000" value="500" step="10">
+            </div>
+            
+            <button id="downloadBtn">下载 PNG</button>
+        </div>
+        
+        <div id="render-container"></div>
+        
+        <div class="canvas-controls hidden" id="canvasControls">
+            <div class="position-controls">
+                <button class="position-btn" id="moveUp">↑</button>
+            </div>
+            <div class="position-controls">
+                <button class="position-btn" id="moveLeft">←</button>
+                <button class="position-btn" id="moveCenter">中心</button>
+                <button class="position-btn" id="moveRight">→</button>
+            </div>
+            <div class="position-controls">
+                <button class="position-btn" id="moveDown">↓</button>
+            </div>
+        </div>
+
+    <footer>
+        <a href="http://junminwu.github.io/index.html" target="_blank">wujunmin出品</a>
+    </footer>
+
+    </div>
+
+    <script>
+        // 全局变量
+        let scene, camera, renderer, controls, mesh, svgPaths = [];
+        let modelGroup = new THREE.Group(); // 用于分组所有相关对象
+        let modelPosition = { x: 0, y: 0, z: 0 };
+        
+        // 初始化 Three.js 场景
+        function initScene() {
+            const container = document.getElementById('render-container');
+            
+            // 创建场景
+            scene = new THREE.Scene();
+            scene.background = null; // 设置为null确保透明背景
+            
+            // 创建相机
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 30;
+            
+            // 创建渲染器
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true,
+                alpha: true // 启用透明背景
+            });
+            renderer.setClearColor(0x000000, 0); // 完全透明背景
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+            
+            // 添加轨道控制器
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // 添加环境光和方向光
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            // 将模型组添加到场景
+            scene.add(modelGroup);
+            
+            // 窗口大小调整事件
+            window.addEventListener('resize', onWindowResize);
+            
+            // 开始动画循环
+            animate();
+        }
+        
+        // 窗口大小调整处理
+        function onWindowResize() {
+            const container = document.getElementById('render-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+        
+        // 更新画布尺寸
+        function updateCanvasSize() {
+            const width = parseInt(document.getElementById('canvasWidth').value);
+            const height = parseInt(document.getElementById('canvasHeight').value);
+            
+            const container = document.getElementById('render-container');
+            container.style.width = width + 'px';
+            container.style.height = height + 'px';
+            
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+            
+            // 调整模型到新中心
+            moveModel('center');
+        }
+        
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        // 加载 SVG 并创建 3D 模型
+        function loadSVG(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const svgData = event.target.result;
+                
+                // 清除现有模型
+                modelGroup.clear();
+                
+                // 使用 SVGLoader 加载 SVG
+                const loader = new THREE.SVGLoader();
+                const svg = loader.parse(svgData);
+                svgPaths = svg.paths; // 保存路径信息用于边缘颜色
+                
+                // 合并所有路径
+                const shapes = [];
+                for (let i = 0; i < svgPaths.length; i++) {
+                    shapes.push(...svgPaths[i].toShapes(true));
+                }
+                
+                // 获取控制参数
+                const extrudeDepth = parseFloat(document.getElementById('extrudeDepth').value);
+                const materialColor = document.getElementById('materialColor').value;
+                
+                // 创建拉伸几何体
+                const extrudeSettings = {
+                    depth: extrudeDepth,
+                    bevelEnabled: false
+                };
+                
+                const geometry = new THREE.ExtrudeGeometry(shapes, extrudeSettings);
+                
+                // 创建材质
+                const material = new THREE.MeshPhongMaterial({
+                    color: new THREE.Color(materialColor),
+                    specular: 0x111111,
+                    shininess: 30,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                
+                // 创建网格并调整方向
+                mesh = new THREE.Mesh(geometry, material);
+                mesh.rotation.x = Math.PI; // 180度旋转修正上下颠倒问题
+                modelGroup.add(mesh);
+                
+                // 添加边缘线并保留SVG原始颜色
+                addEdgesWithOriginalColors(geometry, svgPaths);
+                
+                // 自动调整相机位置
+                fitCameraToObject(camera, controls, modelGroup, 1.2);
+                
+                // 重置模型位置
+                modelPosition = { x: 0, y: 0, z: 0 };
+                modelGroup.position.set(0, 0, 0);
+                
+                // 显示控制面板
+                document.getElementById('controls').classList.remove('hidden');
+                document.getElementById('canvasControls').classList.remove('hidden');
+            };
+            reader.readAsText(file);
+        }
+        
+        // 添加边缘线并保留SVG原始颜色
+        function addEdgesWithOriginalColors(geometry, paths) {
+            // 首先移除所有现有的线
+            modelGroup.children.filter(child => child instanceof THREE.LineSegments)
+                        .forEach(line => {
+                            modelGroup.remove(line);
+                            line.geometry.dispose();
+                            line.material.dispose();
+                        });
+            
+            // 为每个路径创建边缘线
+            paths.forEach(path => {
+                const pathShapes = path.toShapes(true);
+                pathShapes.forEach(shape => {
+                    const pathGeometry = new THREE.ExtrudeGeometry([shape], {
+                        depth: 0.01, // 很小的深度只为了生成边缘
+                        bevelEnabled: false
+                    });
+                    
+                    const edgesGeometry = new THREE.EdgesGeometry(pathGeometry);
+                    const edgesMaterial = new THREE.LineBasicMaterial({ 
+                        color: new THREE.Color(path.color),
+                        linewidth: 1
+                    });
+                    
+                    const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+                    edges.rotation.x = Math.PI;
+                    modelGroup.add(edges);
+                    
+                    // 释放临时几何体
+                    pathGeometry.dispose();
+                });
+            });
+        }
+        
+        // 调整相机位置使对象居中并适当缩放
+        function fitCameraToObject(camera, controls, object, offset) {
+            const box = new THREE.Box3().setFromObject(object);
+            const size = box.getSize(new THREE.Vector3()).length();
+            const center = box.getCenter(new THREE.Vector3());
+            
+            camera.position.copy(center);
+            camera.position.x += size * offset;
+            camera.position.y += size * offset * 0.5;
+            camera.position.z += size * offset;
+            camera.lookAt(center);
+            
+            controls.target.copy(center);
+            controls.update();
+        }
+        
+        // 移动模型位置
+        function moveModel(direction) {
+            if (!mesh) return;
+            
+            const container = document.getElementById('render-container');
+            const aspect = container.clientWidth / container.clientHeight;
+            const step = 1 * (direction === 'center' ? 0 : 1);
+            
+            // 计算基于画布尺寸的中心位置
+            if (direction === 'center') {
+                modelPosition.x = 0;
+                modelPosition.y = 0;
+            } else {
+                switch(direction) {
+                    case 'up':
+                        modelPosition.y += step;
+                        break;
+                    case 'down':
+                        modelPosition.y -= step;
+                        break;
+                    case 'left':
+                        modelPosition.x -= step;
+                        break;
+                    case 'right':
+                        modelPosition.x += step;
+                        break;
+                }
+            }
+            
+            modelGroup.position.set(modelPosition.x, modelPosition.y, modelPosition.z);
+        }
+        
+        // 下载 PNG (透明背景)
+        function downloadPNG() {
+            // 创建临时canvas保持宽高比
+            const width = parseInt(document.getElementById('canvasWidth').value);
+            const height = parseInt(document.getElementById('canvasHeight').value);
+            const targetWidth = Math.min(width, 2000); // 限制最大尺寸
+            const targetHeight = Math.min(height, 2000);
+            
+            // 创建离屏渲染器确保透明背景
+            const tempRenderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true,
+                preserveDrawingBuffer: true // 允许截图
+            });
+            tempRenderer.setClearColor(0x000000, 0); // 完全透明
+            tempRenderer.setSize(targetWidth, targetHeight);
+            
+            // 临时渲染
+            tempRenderer.render(scene, camera);
+            
+            // 获取图像数据
+            const dataURL = tempRenderer.domElement.toDataURL('image/png');
+            
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = '3d-pbi.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // 释放资源
+            tempRenderer.dispose();
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initScene();
+            
+            // 文件上传处理
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            
+            uploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#666';
+                uploadArea.style.backgroundColor = '#f0f0f0';
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                uploadArea.style.borderColor = '#ccc';
+                uploadArea.style.backgroundColor = '';
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#ccc';
+                uploadArea.style.backgroundColor = '';
+                
+                if (e.dataTransfer.files.length) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
+                        loadSVG(file);
+                    } else {
+                        alert('请上传 SVG 文件');
+                    }
+                }
+            });
+            
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length) {
+                    const file = fileInput.files[0];
+                    if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
+                        loadSVG(file);
+                    } else {
+                        alert('请上传 SVG 文件');
+                    }
+                }
+            });
+            
+            // 控制事件监听
+            document.getElementById('extrudeDepth').addEventListener('input', function() {
+                if (mesh && svgPaths.length > 0) {
+                    const extrudeDepth = parseFloat(this.value);
+                    const shapes = [];
+                    for (let i = 0; i < svgPaths.length; i++) {
+                        shapes.push(...svgPaths[i].toShapes(true));
+                    }
+                    
+                    const extrudeSettings = {
+                        depth: extrudeDepth,
+                        bevelEnabled: false
+                    };
+                    
+                    // 移除旧几何体
+                    modelGroup.clear();
+                    
+                    // 创建新几何体
+                    const geometry = new THREE.ExtrudeGeometry(shapes, extrudeSettings);
+                    const material = new THREE.MeshPhongMaterial({
+                        color: new THREE.Color(document.getElementById('materialColor').value),
+                        specular: 0x111111,
+                        shininess: 30,
+                        side: THREE.DoubleSide,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.rotation.x = Math.PI;
+                    modelGroup.add(mesh);
+                    
+                    // 更新边缘线
+                    addEdgesWithOriginalColors(geometry, svgPaths);
+                    
+                    // 保持当前位置
+                    modelGroup.position.set(modelPosition.x, modelPosition.y, modelPosition.z);
+                }
+            });
+            
+            document.getElementById('materialColor').addEventListener('input', function() {
+                if (mesh) {
+                    mesh.material.color.set(this.value);
+                }
+            });
+            
+            document.getElementById('lightColor').addEventListener('input', function() {
+                const light = scene.children.find(obj => obj instanceof THREE.DirectionalLight);
+                if (light) {
+                    light.color.set(this.value);
+                }
+            });
+            
+            document.getElementById('lightIntensity').addEventListener('input', function() {
+                const light = scene.children.find(obj => obj instanceof THREE.DirectionalLight);
+                if (light) {
+                    light.intensity = parseFloat(this.value);
+                }
+            });
+            
+            document.getElementById('canvasWidth').addEventListener('change', updateCanvasSize);
+            document.getElementById('canvasHeight').addEventListener('change', updateCanvasSize);
+            
+            document.getElementById('downloadBtn').addEventListener('click', downloadPNG);
+            
+            // 位置控制按钮
+            document.getElementById('moveUp').addEventListener('click', () => moveModel('up'));
+            document.getElementById('moveDown').addEventListener('click', () => moveModel('down'));
+            document.getElementById('moveLeft').addEventListener('click', () => moveModel('left'));
+            document.getElementById('moveRight').addEventListener('click', () => moveModel('right'));
+            document.getElementById('moveCenter').addEventListener('click', () => moveModel('center'));
+        });
+    </script>
+</body>
+</html>

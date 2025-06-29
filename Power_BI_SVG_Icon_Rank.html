@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI 排名图标生成器</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            flex: 1;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 30px;
+        }
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .control-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+        }
+        input[type="color"] {
+            width: 100%;
+            height: 30px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 2px;
+        }
+        select, .radio-group {
+            width: calc(100% - 20px);
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 14px;
+        }
+        .radio-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        .value-display {
+            display: inline-block;
+            width: 40px;
+            text-align: right;
+            margin-left: 5px;
+            font-size: 13px;
+            color: #666;
+        }
+        .preview-section {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .preview-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        .preview-title {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .code-section {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            position: relative;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .copy-btn:hover {
+            background-color: #2980b9;
+        }
+        .gradient-controls {
+            margin-top: 8px;
+            padding: 8px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            color: #666;
+            font-size: 14px;
+        }
+        footer a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 992px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Power BI 排名图标生成器</h1>
+        
+        <div class="main-content">
+            <div class="control-panel">
+                <!-- 第一列 -->
+                <div>
+                    <div class="control-group">
+                        <label for="numberInput">排名数字</label>
+                        <input type="text" id="numberInput" value="1" maxlength="2" style="width: 60px; padding: 8px;">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="fontFamily">字体</label>
+                        <select id="fontFamily">
+                            <option value="Arial">Arial</option>
+                            <option value="Arial Black">Arial Black</option>
+                            <option value="DIN">DIN</option>
+                            <option value="Segoe UI" selected>Segoe UI</option>
+                            <option value="Segoe UI Bold">Segoe UI Bold</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="textSize">文本大小 <span id="textSizeValue" class="value-display">60</span></label>
+                        <input type="range" id="textSize" min="10" max="100" value="60">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>文本样式</label>
+                        <div class="radio-group">
+                            <div class="radio-options">
+                                <div class="radio-option">
+                                    <input type="radio" id="fontWeightNormal" name="fontWeight" value="normal" checked>
+                                    <label for="fontWeightNormal">正常</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="fontWeightBold" name="fontWeight" value="bold">
+                                    <label for="fontWeightBold">粗体</label>
+                                </div>
+                            </div>
+                            <div class="radio-options" style="margin-top: 5px;">
+                                <div class="radio-option">
+                                    <input type="checkbox" id="fontItalic">
+                                    <label for="fontItalic">斜体</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="textColor">文本颜色</label>
+                        <input type="color" id="textColor" value="#000000">
+                    </div>
+                </div>
+                
+                <!-- 第二列 -->
+                <div>
+                    <div class="control-group">
+                        <label for="bgType">背景类型</label>
+                        <select id="bgType">
+                            <option value="solid">纯色</option>
+                            <option value="linear">线性渐变</option>
+                            <option value="radial">径向渐变</option>
+                        </select>
+                    </div>
+                    
+                    <div id="solidBgControls" class="control-group">
+                        <label for="bgColor">背景颜色</label>
+                        <input type="color" id="bgColor" value="#117865">
+                    </div>
+                    
+                    <div id="gradientBgControls" class="gradient-controls" style="display: none;">
+                        <div class="control-group">
+                            <label for="gradientColor1">颜色1</label>
+                            <input type="color" id="gradientColor1" value="#117865">
+                        </div>
+                        <div class="control-group">
+                            <label for="gradientColor2">颜色2</label>
+                            <input type="color" id="gradientColor2" value="#1abc9c">
+                        </div>
+                        <div class="control-group" id="linearGradientControls">
+                            <label for="gradientAngle">渐变角度 <span id="gradientAngleValue" class="value-display">0</span></label>
+                            <input type="range" id="gradientAngle" min="0" max="360" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="bgOpacity">背景透明度 <span id="bgOpacityValue" class="value-display">0.26</span></label>
+                        <input type="range" id="bgOpacity" min="0" max="100" value="26">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="borderRadius">圆角弧度 <span id="borderRadiusValue" class="value-display">0</span></label>
+                        <input type="range" id="borderRadius" min="0" max="48" value="0">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="borderWidth">边框粗细 <span id="borderWidthValue" class="value-display">0</span></label>
+                        <input type="range" id="borderWidth" min="0" max="10" value="0">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="borderColor">边框颜色</label>
+                        <input type="color" id="borderColor" value="#117865">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="borderStyle">边框样式</label>
+                        <select id="borderStyle">
+                            <option value="solid">实线</option>
+                            <option value="dashed">虚线</option>
+                            <option value="dotted">点线</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="preview-section">
+                <div class="preview-title">实时预览</div>
+                <div class="preview-container" id="svgPreview"></div>
+            </div>
+        </div>
+        
+        <div class="code-section">
+            <button class="copy-btn" onclick="copyCode()">复制代码</button>
+            <div>Power BI SVG排名图标</div>
+            <div id="svgCode"></div>
+        </div>
+    </div>
+
+    <footer>
+        <a href="https://junminwu.github.io" target="_blank">wujunmin出品</a>
+    </footer>
+
+    <script>
+        // 十六进制颜色转RGB
+        function hexToRgb(hex) {
+            // 去除#号
+            hex = hex.replace('#', '');
+            
+            // 解析RGB值
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            
+            return `rgb(${r},${g},${b})`;
+        }
+
+        // 获取所有控制元素
+        const numberInput = document.getElementById('numberInput');
+        const fontFamily = document.getElementById('fontFamily');
+        const textSize = document.getElementById('textSize');
+        const textSizeValue = document.getElementById('textSizeValue');
+        const fontWeightNormal = document.getElementById('fontWeightNormal');
+        const fontWeightBold = document.getElementById('fontWeightBold');
+        const fontItalic = document.getElementById('fontItalic');
+        const textColor = document.getElementById('textColor');
+        const bgType = document.getElementById('bgType');
+        const solidBgControls = document.getElementById('solidBgControls');
+        const gradientBgControls = document.getElementById('gradientBgControls');
+        const linearGradientControls = document.getElementById('linearGradientControls');
+        const bgColor = document.getElementById('bgColor');
+        const gradientColor1 = document.getElementById('gradientColor1');
+        const gradientColor2 = document.getElementById('gradientColor2');
+        const gradientAngle = document.getElementById('gradientAngle');
+        const gradientAngleValue = document.getElementById('gradientAngleValue');
+        const bgOpacity = document.getElementById('bgOpacity');
+        const bgOpacityValue = document.getElementById('bgOpacityValue');
+        const borderRadius = document.getElementById('borderRadius');
+        const borderRadiusValue = document.getElementById('borderRadiusValue');
+        const borderWidth = document.getElementById('borderWidth');
+        const borderWidthValue = document.getElementById('borderWidthValue');
+        const borderColor = document.getElementById('borderColor');
+        const borderStyle = document.getElementById('borderStyle');
+        const svgPreview = document.getElementById('svgPreview');
+        const svgCode = document.getElementById('svgCode');
+        
+        // 背景类型切换
+        bgType.addEventListener('change', function() {
+            if (this.value === 'solid') {
+                solidBgControls.style.display = 'block';
+                gradientBgControls.style.display = 'none';
+            } else {
+                solidBgControls.style.display = 'none';
+                gradientBgControls.style.display = 'block';
+                linearGradientControls.style.display = this.value === 'linear' ? 'block' : 'none';
+            }
+            updateSVG();
+        });
+        
+        // 添加事件监听器
+        const controls = [
+            numberInput, fontFamily, textSize, textColor, 
+            fontWeightNormal, fontWeightBold, fontItalic,
+            bgType, bgColor, gradientColor1, gradientColor2, gradientAngle,
+            bgOpacity, borderRadius, borderWidth, borderColor, borderStyle
+        ];
+        controls.forEach(control => {
+            control.addEventListener('input', updateSVG);
+            control.addEventListener('change', updateSVG);
+        });
+        
+        // 初始化
+        updateSVG();
+        
+        // 更新SVG函数
+        function updateSVG() {
+            // 更新显示的值
+            textSizeValue.textContent = textSize.value;
+            bgOpacityValue.textContent = (bgOpacity.value / 100).toFixed(2);
+            borderRadiusValue.textContent = borderRadius.value;
+            borderWidthValue.textContent = borderWidth.value;
+            gradientAngleValue.textContent = gradientAngle.value;
+            
+            // 获取当前值
+            const number = numberInput.value;
+            const font = fontFamily.value;
+            const size = textSize.value;
+            const weight = fontWeightBold.checked ? 'bold' : 'normal';
+            const italic = fontItalic.checked ? 'italic' : 'normal';
+            const tColor = hexToRgb(textColor.value);
+            const opacity = (bgOpacity.value / 100).toFixed(2);
+            const radius = borderRadius.value;
+            const bWidth = borderWidth.value;
+            const bColor = hexToRgb(borderColor.value);
+            const bStyle = borderStyle.value;
+            
+            // 计算实际宽度和高度（考虑边框）
+            const actualSize = 96 - (bWidth * 2);
+            
+            // 处理背景
+            let backgroundFill;
+            if (bgType.value === 'solid') {
+                backgroundFill = `fill='${hexToRgb(bgColor.value)}' fill-opacity='${opacity}'`;
+            } else {
+                const color1 = hexToRgb(gradientColor1.value);
+                const color2 = hexToRgb(gradientColor2.value);
+                const gradientId = `gradient-${Date.now()}`;
+                
+                if (bgType.value === 'linear') {
+                    const angle = gradientAngle.value;
+                    backgroundFill = `
+<defs>
+    <linearGradient id='${gradientId}' x1='0%' y1='0%' x2='100%' y2='0%' gradientTransform='rotate(${angle}, 0.5, 0.5)'>
+        <stop offset='0%' stop-color='${color1}' stop-opacity='${opacity}' />
+        <stop offset='100%' stop-color='${color2}' stop-opacity='${opacity}' />
+    </linearGradient>
+</defs>
+fill='url(#${gradientId})'`;
+                } else { // radial
+                    backgroundFill = `
+<defs>
+    <radialGradient id='${gradientId}' cx='50%' cy='50%' r='70%' fx='50%' fy='50%'>
+        <stop offset='0%' stop-color='${color1}' stop-opacity='${opacity}' />
+        <stop offset='100%' stop-color='${color2}' stop-opacity='${opacity}' />
+    </radialGradient>
+</defs>
+fill='url(#${gradientId})'`;
+                }
+            }
+            
+            // 创建SVG预览（使用实际数字）
+            const previewSvg = `
+<svg xmlns='http://www.w3.org/2000/svg' id='wujunmin' width='96' height='96'>
+${bgType.value !== 'solid' ? backgroundFill.split('\n').slice(1, -1).join('\n') : ''}
+<rect rx='${radius}' x='${bWidth}' y='${bWidth}' width='${actualSize}' height='${actualSize}' 
+    ${bgType.value === 'solid' ? backgroundFill : backgroundFill.split('\n').slice(-1)[0]}
+    stroke-width='${bWidth}' stroke='${bColor}' stroke-dasharray='${getDashArray(bStyle)}'/>
+<text x='48' y='48' text-anchor='middle' dominant-baseline='central' 
+    font-size='${size}' font-family='${font}' font-weight='${weight}' font-style='${italic}' fill='${tColor}'>${number}</text>
+</svg>`;
+            
+            // 更新预览
+            svgPreview.innerHTML = previewSvg;
+            
+            // 创建用于Power BI的SVG代码（使用度量值占位符）
+            const powerBISvg = `<svg xmlns='http://www.w3.org/2000/svg' id='wujunmin' width='96' height='96'>
+${bgType.value !== 'solid' ? backgroundFill.split('\n').slice(1, -1).join('\n') : ''}
+<rect rx='${radius}' x='${bWidth}' y='${bWidth}' width='${actualSize}' height='${actualSize}' 
+    ${bgType.value === 'solid' ? backgroundFill : backgroundFill.split('\n').slice(-1)[0]}
+    stroke-width='${bWidth}' stroke='${bColor}' stroke-dasharray='${getDashArray(bStyle)}'/>
+<text x='48' y='48' text-anchor='middle' dominant-baseline='central' 
+    font-size='${size}' font-family='${font}' font-weight='${weight}' font-style='${italic}' fill='${tColor}'>"& _排名度量值 &"</text>
+</svg>`;
+            
+            // 更新代码（不进行URI编码）
+            const fullCode = `SVG.Rank = \n"data:image/svg+xml;utf8,${powerBISvg}"`;
+            svgCode.textContent = fullCode;
+        }
+        
+        // 获取边框虚线模式
+        function getDashArray(style) {
+            switch(style) {
+                case 'dashed': return '5,3';
+                case 'dotted': return '2,2';
+                default: return 'none';
+            }
+        }
+        
+        // 复制代码函数
+        function copyCode() {
+            const code = svgCode.textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '已复制!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

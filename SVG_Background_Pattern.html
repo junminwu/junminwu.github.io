@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG图案填充工具 | wujunmin</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --light-color: #ecf0f1;
+            --dark-color: #1a252f;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 500;
+        }
+        
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .control-panel {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .panel-title {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            font-weight: 500;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--secondary-color);
+            font-weight: 500;
+        }
+        
+        input[type="file"],
+        input[type="range"],
+        input[type="color"],
+        select {
+            width: 100%;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 6px;
+            background: #ddd;
+            border-radius: 3px;
+            margin-top: 10px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #2c3e50;
+        }
+        
+        .preview-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .svg-preview {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 500px;
+            border: 1px dashed #ddd;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            position: relative;
+        }
+        
+        .value-display {
+            font-size: 12px;
+            color: var(--secondary-color);
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .color-picker {
+            width: 50px;
+            height: 30px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .opacity-control {
+            flex-grow: 1;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px 0;
+            color: var(--secondary-color);
+            font-size: 12px;
+            border-top: 1px solid #eee;
+        }
+        
+        footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .info-text {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            display: none;
+            position: absolute;
+            background: rgba(255,255,255,0.8);
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 10;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: var(--accent-color);
+            animation: spin 1s linear infinite;
+            margin-bottom: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .shape-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .shape-option {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .shape-option.selected {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        }
+        
+        .shape-option svg {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <h1>SVG图案填充工具</h1>
+            <div>视频讲解</div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="control-panel">
+                <h2 class="panel-title">设置面板</h2>
+                
+                <div class="form-group">
+                    <label for="svg-upload">导入SVG文件</label>
+                    <input type="file" id="svg-upload" accept=".svg">
+                    <p class="info-text">请导入需要填充图案的SVG文件</p>
+                    <p class="error-message" id="upload-error"></p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pattern-type">填充图案</label>
+                    <div class="shape-preview">
+                        <div class="shape-option selected" data-type="circle" title="圆形">
+                            <svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#3498db"/></svg>
+                        </div>
+                        <div class="shape-option" data-type="square" title="正方形">
+                            <svg viewBox="0 0 20 20"><rect x="4" y="4" width="12" height="12" fill="#3498db"/></svg>
+                        </div>
+                        <div class="shape-option" data-type="triangle" title="三角形">
+                            <svg viewBox="0 0 20 20"><polygon points="10,2 18,18 2,18" fill="#3498db"/></svg>
+                        </div>
+                        <div class="shape-option" data-type="diamond" title="菱形">
+                            <svg viewBox="0 0 20 20"><polygon points="10,2 18,10 10,18 2,10" fill="#3498db"/></svg>
+                        </div>
+                        <div class="shape-option" data-type="cross" title="十字">
+                            <svg viewBox="0 0 20 20">
+                                <rect x="8" y="2" width="4" height="16" fill="#3498db"/>
+                                <rect x="2" y="8" width="16" height="4" fill="#3498db"/>
+                            </svg>
+                        </div>
+                        <div class="shape-option" data-type="star" title="星形">
+                            <svg viewBox="0 0 20 20">
+                                <path d="M10,2 L12.36,7.64 L18,10 L12.36,12.36 L10,18 L7.64,12.36 L2,10 L7.64,7.64 Z" fill="#3498db"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dot-density">图案间距</label>
+                    <input type="range" id="dot-density" min="1" max="50" value="8">
+                    <div class="value-display"><span id="density-value">8</span> px</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>图案颜色</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="dot-color" value="#3498db" class="color-picker">
+                        <input type="range" id="dot-opacity" min="0" max="100" value="100" class="opacity-control">
+                    </div>
+                    <div class="value-display">
+                        <span id="color-value">#3498db</span> | 
+                        透明度: <span id="opacity-value">100</span>%
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="dot-size">图案大小</label>
+                    <input type="range" id="dot-size" min="1" max="10" value="2">
+                    <div class="value-display"><span id="size-value">2</span> px</div>
+                </div>
+                
+                <button id="download-btn" class="btn">下载SVG</button>
+                <button id="copy-btn" class="btn btn-secondary">复制SVG代码</button>
+            </div>
+            
+            <div class="preview-container">
+                <h2 class="panel-title">效果预览</h2>
+                <div class="svg-preview" id="svg-preview">
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <div>正在生成图案填充...</div>
+                    </div>
+                    <p style="color: #999;" id="default-message">请导入SVG文件以预览效果</p>
+                    <p class="error-message" id="preview-error"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="container">
+        <p><a href="https://junminwu.github.io/" target="_blank">wujunmin出品</a></p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const svgUpload = document.getElementById('svg-upload');
+            const dotDensity = document.getElementById('dot-density');
+            const densityValue = document.getElementById('density-value');
+            const dotColor = document.getElementById('dot-color');
+            const colorValue = document.getElementById('color-value');
+            const dotOpacity = document.getElementById('dot-opacity');
+            const opacityValue = document.getElementById('opacity-value');
+            const dotSize = document.getElementById('dot-size');
+            const sizeValue = document.getElementById('size-value');
+            const downloadBtn = document.getElementById('download-btn');
+            const copyBtn = document.getElementById('copy-btn');
+            const svgPreview = document.getElementById('svg-preview');
+            const loadingIndicator = document.getElementById('loading');
+            const defaultMessage = document.getElementById('default-message');
+            const uploadError = document.getElementById('upload-error');
+            const previewError = document.getElementById('preview-error');
+            const shapeOptions = document.querySelectorAll('.shape-option');
+            
+            let originalSvg = null;
+            let modifiedSvg = null;
+            let isProcessing = false;
+            let currentPatternType = 'circle';
+            
+            // 显示错误信息
+            function showError(element, message) {
+                element.textContent = message;
+                element.style.display = 'block';
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 5000);
+            }
+            
+            // 更新显示值
+            function updateDisplayValues() {
+                densityValue.textContent = dotDensity.value;
+                colorValue.textContent = dotColor.value;
+                opacityValue.textContent = dotOpacity.value;
+                sizeValue.textContent = dotSize.value;
+                
+                // 参数变化时自动更新预览(如果不是正在处理中)
+                if (originalSvg && !isProcessing) {
+                    applyPattern();
+                }
+            }
+            
+            // 监听所有参数变化
+            dotDensity.addEventListener('input', updateDisplayValues);
+            dotColor.addEventListener('input', updateDisplayValues);
+            dotOpacity.addEventListener('input', updateDisplayValues);
+            dotSize.addEventListener('input', updateDisplayValues);
+            
+            // 选择图案类型
+            shapeOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    shapeOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    currentPatternType = this.dataset.type;
+                    if (originalSvg) {
+                        applyPattern();
+                    }
+                });
+            });
+            
+            // 导入SVG文件
+            svgUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                uploadError.style.display = 'none';
+                previewError.style.display = 'none';
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        svgPreview.innerHTML = event.target.result;
+                        originalSvg = svgPreview.querySelector('svg');
+                        
+                        if (!originalSvg) {
+                            throw new Error('导入的文件不是有效的SVG格式');
+                        }
+                        
+                        // 克隆原始SVG以备使用
+                        originalSvg = originalSvg.cloneNode(true);
+                        
+                        // 去除原始SVG的所有填充和边框
+                        const paths = originalSvg.querySelectorAll('path, polygon, rect, circle, ellipse');
+                        paths.forEach(element => {
+                            element.removeAttribute('fill');
+                            element.removeAttribute('stroke');
+                            element.removeAttribute('stroke-width');
+                        });
+                        
+                        defaultMessage.style.display = 'none';
+                        applyPattern();
+                    } catch (error) {
+                        console.error('SVG导入错误:', error);
+                        showError(uploadError, 'SVG导入错误: ' + error.message);
+                        svgPreview.innerHTML = '<p style="color: #999;" id="default-message">请导入SVG文件以预览效果</p>';
+                        defaultMessage = document.getElementById('default-message');
+                    }
+                };
+                
+                reader.onerror = function() {
+                    showError(uploadError, '文件读取失败，请重试');
+                };
+                
+                reader.readAsText(file);
+            });
+            
+            // 创建图案元素
+            function createPatternElement(x, y, size, color, opacity) {
+                const sizeStr = size * 2;
+                const halfSize = size;
+                
+                switch(currentPatternType) {
+                    case 'square':
+                        const square = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        square.setAttribute('x', x - halfSize);
+                        square.setAttribute('y', y - halfSize);
+                        square.setAttribute('width', sizeStr);
+                        square.setAttribute('height', sizeStr);
+                        square.setAttribute('fill', color);
+                        square.setAttribute('opacity', opacity);
+                        return square;
+                        
+                    case 'triangle':
+                        const triangle = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                        const points = [
+                            [x, y - halfSize],
+                            [x + halfSize, y + halfSize],
+                            [x - halfSize, y + halfSize]
+                        ].map(p => p.join(',')).join(' ');
+                        triangle.setAttribute('points', points);
+                        triangle.setAttribute('fill', color);
+                        triangle.setAttribute('opacity', opacity);
+                        return triangle;
+                        
+                    case 'diamond':
+                        const diamond = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                        const diamondPoints = [
+                            [x, y - halfSize],
+                            [x + halfSize, y],
+                            [x, y + halfSize],
+                            [x - halfSize, y]
+                        ].map(p => p.join(',')).join(' ');
+                        diamond.setAttribute('points', diamondPoints);
+                        diamond.setAttribute('fill', color);
+                        diamond.setAttribute('opacity', opacity);
+                        return diamond;
+                        
+                    case 'cross':
+                        const cross = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                        const rect1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        rect1.setAttribute('x', x - halfSize/2);
+                        rect1.setAttribute('y', y - halfSize);
+                        rect1.setAttribute('width', halfSize);
+                        rect1.setAttribute('height', sizeStr);
+                        rect1.setAttribute('fill', color);
+                        rect1.setAttribute('opacity', opacity);
+                        
+                        const rect2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        rect2.setAttribute('x', x - halfSize);
+                        rect2.setAttribute('y', y - halfSize/2);
+                        rect2.setAttribute('width', sizeStr);
+                        rect2.setAttribute('height', halfSize);
+                        rect2.setAttribute('fill', color);
+                        rect2.setAttribute('opacity', opacity);
+                        
+                        cross.appendChild(rect1);
+                        cross.appendChild(rect2);
+                        return cross;
+                        
+                    case 'star':
+                        const star = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        const starPoints = [
+                            [x, y - halfSize],
+                            [x + halfSize*0.4, y - halfSize*0.3],
+                            [x + halfSize, y],
+                            [x + halfSize*0.4, y + halfSize*0.3],
+                            [x, y + halfSize],
+                            [x - halfSize*0.4, y + halfSize*0.3],
+                            [x - halfSize, y],
+                            [x - halfSize*0.4, y - halfSize*0.3]
+                        ];
+                        let d = `M${starPoints[0][0]},${starPoints[0][1]}`;
+                        for (let i = 1; i < starPoints.length; i++) {
+                            d += `L${starPoints[i][0]},${starPoints[i][1]}`;
+                        }
+                        d += 'Z';
+                        star.setAttribute('d', d);
+                        star.setAttribute('fill', color);
+                        star.setAttribute('opacity', opacity);
+                        return star;
+                        
+                    default: // circle
+                        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        circle.setAttribute('cx', x);
+                        circle.setAttribute('cy', y);
+                        circle.setAttribute('r', halfSize);
+                        circle.setAttribute('fill', color);
+                        circle.setAttribute('opacity', opacity);
+                        return circle;
+                }
+            }
+            
+            // 生成图案填充
+            function applyPattern() {
+                if (!originalSvg || isProcessing) return;
+                
+                isProcessing = true;
+                loadingIndicator.style.display = 'flex';
+                previewError.style.display = 'none';
+                
+                // 使用setTimeout让UI有机会更新加载状态
+                setTimeout(() => {
+                    try {
+                        // 克隆原始SVG
+                        modifiedSvg = originalSvg.cloneNode(true);
+                        
+                        // 获取原始属性
+                        const originalViewBox = originalSvg.getAttribute('viewBox');
+                        const originalWidth = originalSvg.getAttribute('width');
+                        const originalHeight = originalSvg.getAttribute('height');
+                        
+                        // 创建新的SVG用于图案填充
+                        const newSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        newSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                        
+                        // 保留原始viewBox
+                        if (originalViewBox) {
+                            newSvg.setAttribute('viewBox', originalViewBox);
+                        }
+                        
+                        // 只有当原图有width/height时才设置
+                        if (originalWidth) {
+                            newSvg.setAttribute('width', originalWidth);
+                        }
+                        if (originalHeight) {
+                            newSvg.setAttribute('height', originalHeight);
+                        }
+                        
+                        newSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                        
+                        // 获取参数
+                        const spacing = parseInt(dotDensity.value);
+                        const elementSize = parseInt(dotSize.value);
+                        const color = dotColor.value;
+                        const opacity = parseInt(dotOpacity.value) / 100;
+                        
+                        // 解析viewBox用于canvas绘制
+                        let vbX = 0, vbY = 0, vbWidth = 300, vbHeight = 150;
+                        if (originalViewBox) {
+                            const vbParts = originalViewBox.split(' ');
+                            vbX = parseFloat(vbParts[0]) || 0;
+                            vbY = parseFloat(vbParts[1]) || 0;
+                            vbWidth = parseFloat(vbParts[2]) || 300;
+                            vbHeight = parseFloat(vbParts[3]) || 150;
+                        } else if (originalWidth && originalHeight) {
+                            vbWidth = parseFloat(originalWidth);
+                            vbHeight = parseFloat(originalHeight);
+                        }
+                        
+                        // 获取所有路径元素
+                        const paths = modifiedSvg.querySelectorAll('path');
+                        
+                        // 如果没有路径元素，尝试获取其他形状元素并转换为路径
+                        if (paths.length === 0) {
+                            const shapes = modifiedSvg.querySelectorAll('polygon, rect, circle, ellipse');
+                            shapes.forEach(shape => {
+                                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                                if (shape.tagName === 'rect') {
+                                    const x = parseFloat(shape.getAttribute('x')) || 0;
+                                    const y = parseFloat(shape.getAttribute('y')) || 0;
+                                    const width = parseFloat(shape.getAttribute('width'));
+                                    const height = parseFloat(shape.getAttribute('height'));
+                                    path.setAttribute('d', `M${x},${y} h${width} v${height} h-${width} z`);
+                                } else if (shape.tagName === 'circle') {
+                                    const cx = parseFloat(shape.getAttribute('cx')) || 0;
+                                    const cy = parseFloat(shape.getAttribute('cy')) || 0;
+                                    const r = parseFloat(shape.getAttribute('r'));
+                                    path.setAttribute('d', `M${cx},${cy} m-${r},0 a${r},${r} 0 1,0 ${r*2},0 a${r},${r} 0 1,0 -${r*2},0`);
+                                } else if (shape.tagName === 'ellipse') {
+                                    const cx = parseFloat(shape.getAttribute('cx')) || 0;
+                                    const cy = parseFloat(shape.getAttribute('cy')) || 0;
+                                    const rx = parseFloat(shape.getAttribute('rx'));
+                                    const ry = parseFloat(shape.getAttribute('ry'));
+                                    path.setAttribute('d', `M${cx},${cy} m-${rx},0 a${rx},${ry} 0 1,0 ${rx*2},0 a${rx},${ry} 0 1,0 -${rx*2},0`);
+                                } else if (shape.tagName === 'polygon') {
+                                    const points = shape.getAttribute('points');
+                                    path.setAttribute('d', 'M' + points.split(' ').join(' L') + ' Z');
+                                }
+                                modifiedSvg.appendChild(path);
+                            });
+                        }
+                        
+                        // 创建canvas用于检测点是否在路径内
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // 设置canvas尺寸(放大以提高精度)
+                        const scale = 2; // 放大倍数
+                        canvas.width = vbWidth * scale;
+                        canvas.height = vbHeight * scale;
+                        
+                        // 处理每个路径
+                        const allPaths = modifiedSvg.querySelectorAll('path');
+                        if (allPaths.length === 0) {
+                            throw new Error('SVG中没有找到可转换的路径或形状');
+                        }
+                        
+                        allPaths.forEach(path => {
+                            const pathData = path.getAttribute('d');
+                            if (!pathData) return;
+                            
+                            // 绘制路径到canvas
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            const path2D = new Path2D(pathData);
+                            
+                            // 应用缩放
+                            ctx.save();
+                            ctx.scale(scale, scale);
+                            ctx.translate(-vbX, -vbY);
+                            
+                            // 使用填充模式
+                            ctx.fillStyle = 'black';
+                            ctx.fill(path2D);
+                            
+                            ctx.restore();
+                            
+                            // 获取图像数据
+                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            const data = imageData.data;
+                            
+                            // 在路径上生成图案
+                            const scaledSpacing = spacing * scale;
+                            
+                            for (let y = 0; y < canvas.height; y += scaledSpacing) {
+                                for (let x = 0; x < canvas.width; x += scaledSpacing) {
+                                    const pixelIndex = (y * canvas.width + x) * 4;
+                                    
+                                    // 检查像素是否在路径内(alpha > 0)
+                                    if (data[pixelIndex + 3] > 0) {
+                                        const element = createPatternElement(
+                                            x / scale + vbX,
+                                            y / scale + vbY,
+                                            elementSize,
+                                            color,
+                                            opacity
+                                        );
+                                        newSvg.appendChild(element);
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // 更新预览
+                        svgPreview.innerHTML = '';
+                        svgPreview.appendChild(newSvg);
+                        modifiedSvg = newSvg;
+                        defaultMessage.style.display = 'none';
+                        
+                    } catch (error) {
+                        console.error('生成图案填充时出错:', error);
+                        showError(previewError, '生成图案填充时出错: ' + error.message);
+                    } finally {
+                        isProcessing = false;
+                        loadingIndicator.style.display = 'none';
+                    }
+                }, 100);
+            }
+            
+            // 下载按钮
+            downloadBtn.addEventListener('click', function() {
+                if (!modifiedSvg) {
+                    alert('请先生成图案填充');
+                    return;
+                }
+                
+                const serializer = new XMLSerializer();
+                const svgStr = serializer.serializeToString(modifiedSvg);
+                const blob = new Blob([svgStr], {type: 'image/svg+xml'});
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `svg-pattern-${currentPatternType}-${Date.now()}.svg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+            
+            // 复制SVG代码
+            copyBtn.addEventListener('click', function() {
+                if (!modifiedSvg) {
+                    alert('请先生成图案填充');
+                    return;
+                }
+                
+                const serializer = new XMLSerializer();
+                const svgStr = serializer.serializeToString(modifiedSvg);
+                
+                navigator.clipboard.writeText(svgStr)
+                    .then(() => alert('SVG代码已复制到剪贴板'))
+                    .catch(err => {
+                        console.error('复制失败:', err);
+                        alert('复制失败: ' + err);
+                    });
+            });
+            
+            // 初始化显示值
+            updateDisplayValues();
+        });
+    </script>
+</body>
+</html>

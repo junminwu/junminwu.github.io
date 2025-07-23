@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG颜色转码工具 | wujunmin</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --success-color: #27ae60;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+        
+        .logo {
+            font-weight: 700;
+            color: var(--accent-color);
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            font-size: 1.4rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 6px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--accent-color);
+        }
+        
+        .file-upload input {
+            display: none;
+        }
+        
+        .file-upload label {
+            display: block;
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: var(--secondary-color);
+        }
+        
+        .file-upload label i {
+            font-size: 2rem;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .selected-files {
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        
+        .file-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .file-size {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+        }
+        
+        .remove-file {
+            color: #e74c3c;
+            cursor: pointer;
+            margin-left: 0.5rem;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #2c3e50;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #219653;
+        }
+        
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .status {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .status.success {
+            background-color: rgba(39, 174, 96, 0.1);
+            color: var(--success-color);
+            display: block;
+        }
+        
+        .status.error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            display: block;
+        }
+        
+        .download-section {
+            display: none;
+            margin-top: 1.5rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1.5rem 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+            margin-top: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <h1>SVG颜色转码工具</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <h2><i class="fas fa-upload"></i> 导入SVG文件</h2>
+            <div class="file-upload">
+                <input type="file" id="svg-files" accept=".svg" multiple>
+                <label for="svg-files">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>点击或拖拽SVG文件到此处</span>
+                    <p class="hint">支持批量导入多个SVG文件</p>
+                </label>
+                <div class="selected-files" id="selected-files"></div>
+            </div>
+            
+            <h2><i class="fas fa-exchange-alt"></i> 转码操作</h2>
+            <div class="action-buttons">
+                <button id="hex-to-rgb" class="btn btn-primary" disabled>
+                    <i class="fas fa-arrow-right"></i> 十六进制转RGB
+                </button>
+                <button id="rgb-to-hex" class="btn btn-secondary" disabled>
+                    <i class="fas fa-arrow-left"></i> RGB转十六进制
+                </button>
+            </div>
+            
+            <div id="status" class="status"></div>
+            
+            <div id="download-section" class="download-section">
+                <h2><i class="fas fa-download"></i> 下载转换后的文件</h2>
+                <button id="download-all" class="btn btn-success">
+                    <i class="fas fa-file-archive"></i> 批量下载所有SVG
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="container">
+        <p>wujunmin</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('svg-files');
+            const selectedFilesDiv = document.getElementById('selected-files');
+            const hexToRgbBtn = document.getElementById('hex-to-rgb');
+            const rgbToHexBtn = document.getElementById('rgb-to-hex');
+            const downloadAllBtn = document.getElementById('download-all');
+            const downloadSection = document.getElementById('download-section');
+            const statusDiv = document.getElementById('status');
+            
+            let files = [];
+            let processedFiles = [];
+            
+            // 文件导入处理
+            fileInput.addEventListener('change', function(e) {
+                files = Array.from(e.target.files);
+                updateSelectedFilesList();
+                
+                // 启用按钮
+                if (files.length > 0) {
+                    hexToRgbBtn.disabled = false;
+                    rgbToHexBtn.disabled = false;
+                } else {
+                    hexToRgbBtn.disabled = true;
+                    rgbToHexBtn.disabled = true;
+                }
+            });
+            
+            // 拖放功能
+            const fileUploadDiv = document.querySelector('.file-upload');
+            fileUploadDiv.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.borderColor = '#3498db';
+                this.style.backgroundColor = 'rgba(52, 152, 219, 0.05)';
+            });
+            
+            fileUploadDiv.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.borderColor = '#ddd';
+                this.style.backgroundColor = 'transparent';
+            });
+            
+            fileUploadDiv.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.borderColor = '#ddd';
+                this.style.backgroundColor = 'transparent';
+                
+                const droppedFiles = e.dataTransfer.files;
+                const svgFiles = Array.from(droppedFiles).filter(file => 
+                    file.name.toLowerCase().endsWith('.svg')
+                );
+                
+                if (svgFiles.length > 0) {
+                    files = svgFiles;
+                    updateSelectedFilesList();
+                    
+                    // 启用按钮
+                    hexToRgbBtn.disabled = false;
+                    rgbToHexBtn.disabled = false;
+                } else {
+                    showStatus('请导入SVG文件', 'error');
+                }
+            });
+            
+            // 更新已选择文件列表
+            function updateSelectedFilesList() {
+                selectedFilesDiv.innerHTML = '';
+                
+                if (files.length === 0) {
+                    selectedFilesDiv.innerHTML = '<p>未选择任何文件</p>';
+                    return;
+                }
+                
+                files.forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    
+                    const fileName = document.createElement('span');
+                    fileName.className = 'file-name';
+                    fileName.textContent = file.name;
+                    
+                    const fileSize = document.createElement('span');
+                    fileSize.className = 'file-size';
+                    fileSize.textContent = formatFileSize(file.size);
+                    
+                    const removeBtn = document.createElement('span');
+                    removeBtn.className = 'remove-file';
+                    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    removeBtn.addEventListener('click', () => removeFile(index));
+                    
+                    fileItem.appendChild(fileName);
+                    fileItem.appendChild(fileSize);
+                    fileItem.appendChild(removeBtn);
+                    
+                    selectedFilesDiv.appendChild(fileItem);
+                });
+            }
+            
+            // 移除文件
+            function removeFile(index) {
+                files.splice(index, 1);
+                updateSelectedFilesList();
+                
+                if (files.length === 0) {
+                    hexToRgbBtn.disabled = true;
+                    rgbToHexBtn.disabled = true;
+                }
+            }
+            
+            // 格式化文件大小
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            // 显示状态信息
+            function showStatus(message, type) {
+                statusDiv.textContent = message;
+                statusDiv.className = 'status ' + type;
+                setTimeout(() => {
+                    statusDiv.className = 'status';
+                    statusDiv.textContent = '';
+                }, 5000);
+            }
+            
+            // 十六进制转RGB
+            hexToRgbBtn.addEventListener('click', function() {
+                if (files.length === 0) {
+                    showStatus('请先导入SVG文件', 'error');
+                    return;
+                }
+                
+                processFiles('hexToRgb');
+            });
+            
+            // RGB转十六进制
+            rgbToHexBtn.addEventListener('click', function() {
+                if (files.length === 0) {
+                    showStatus('请先导入SVG文件', 'error');
+                    return;
+                }
+                
+                processFiles('rgbToHex');
+            });
+            
+            // 处理文件
+            function processFiles(conversionType) {
+                processedFiles = [];
+                let processedCount = 0;
+                
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const svgContent = e.target.result;
+                        let processedContent;
+                        
+                        if (conversionType === 'hexToRgb') {
+                            processedContent = convertHexToRgb(svgContent);
+                        } else {
+                            processedContent = convertRgbToHex(svgContent);
+                        }
+                        
+                        processedFiles.push({
+                            name: file.name,
+                            content: processedContent
+                        });
+                        
+                        processedCount++;
+                        
+                        if (processedCount === files.length) {
+                            showStatus(`成功处理了 ${processedCount} 个文件`, 'success');
+                            downloadSection.style.display = 'block';
+                        }
+                    };
+                    
+                    reader.readAsText(file);
+                });
+            }
+            
+            // 十六进制颜色转RGB
+            function convertHexToRgb(svgContent) {
+                // 匹配 #rgb 或 #rrggbb 格式的颜色
+                const hexColorRegex = /#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})(?=[^0-9a-fA-F]|$)/g;
+                
+                return svgContent.replace(hexColorRegex, hex => {
+                    // 如果是简写格式 (#rgb)，转换为完整格式 (#rrggbb)
+                    if (hex.length === 4) {
+                        hex = '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+                    }
+                    
+                    // 转换为RGB
+                    const r = parseInt(hex.substr(1, 2), 16);
+                    const g = parseInt(hex.substr(3, 2), 16);
+                    const b = parseInt(hex.substr(5, 2), 16);
+                    
+                    return `rgb(${r}, ${g}, ${b})`;
+                });
+            }
+            
+            // RGB颜色转十六进制
+            function convertRgbToHex(svgContent) {
+                // 匹配 rgb(r, g, b) 格式的颜色
+                const rgbColorRegex = /rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)/g;
+                
+                return svgContent.replace(rgbColorRegex, (match, r, g, b) => {
+                    // 确保数值在0-255范围内
+                    r = Math.max(0, Math.min(255, parseInt(r)));
+                    g = Math.max(0, Math.min(255, parseInt(g)));
+                    b = Math.max(0, Math.min(255, parseInt(b)));
+                    
+                    // 转换为十六进制
+                    const hexR = r.toString(16).padStart(2, '0');
+                    const hexG = g.toString(16).padStart(2, '0');
+                    const hexB = b.toString(16).padStart(2, '0');
+                    
+                    return `#${hexR}${hexG}${hexB}`.toUpperCase();
+                });
+            }
+            
+            // 批量下载
+            downloadAllBtn.addEventListener('click', function() {
+                if (processedFiles.length === 0) {
+                    showStatus('没有可下载的文件', 'error');
+                    return;
+                }
+                
+                // 如果只有一个文件，直接下载
+                if (processedFiles.length === 1) {
+                    downloadFile(processedFiles[0]);
+                    return;
+                }
+                
+                // 多个文件打包下载
+                const zip = new JSZip();
+                const folder = zip.folder("converted_svgs");
+                
+                processedFiles.forEach(file => {
+                    folder.file(file.name, file.content);
+                });
+                
+                zip.generateAsync({type: "blob"}).then(content => {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    link.download = 'converted_svgs.zip';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                });
+            });
+            
+            // 单个文件下载
+            function downloadFile(file) {
+                const link = document.createElement('a');
+                link.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(file.content);
+                link.download = file.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+</body>
+</html>

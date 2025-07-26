@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>货品调拨异常检核工具 | wujunmin</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .dashboard-header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .card {
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+        }
+        .card-header {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-body {
+            padding: 15px;
+        }
+        .table {
+            font-size: 14px;
+            margin-bottom: 0;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            padding: 10px;
+            white-space: nowrap;
+        }
+        .table td {
+            padding: 10px;
+        }
+        .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 13px;
+        }
+        .footer {
+            color: white;
+            padding: 12px;
+            text-align: center;
+            margin-top: 50px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+        .error-row {
+            background-color: #ffdddd !important;
+        }
+        .warning-row {
+            background-color: #fff3cd !important;
+        }
+        .data-import-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .import-column {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            height: 100%;
+        }
+        .import-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 5px;
+            display: block;
+        }
+        #loadingIndicator {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+        .export-btn {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        .export-btn:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingIndicator">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="dashboard-header">
+            <h1 style="font-size: 28px; margin-bottom: 5px;">货品调拨异常检核工具</h1>
+            <p style="font-size: 14px; margin-bottom: 0;">数据源中需要有产品ID、调出店铺、调入店铺、调拨数量四列</p>
+        </div>
+
+        <div class="data-import-section">
+            <div class="row">
+                <!-- 本次调拨明细导入 - 左侧 -->
+                <div class="col-md-6">
+                    <div class="import-column">
+                        <div class="import-title">本次调拨明细导入</div>
+                        <div class="form-group">
+                            <label class="form-label">Excel文件</label>
+                            <input class="form-control" type="file" id="currentFile" accept=".xlsx, .xls" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">选择工作表</label>
+                            <select class="form-select" id="currentSheet" disabled required>
+                                <option value="">请先导入文件</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 上次调拨明细导入 - 右侧 -->
+                <div class="col-md-6">
+                    <div class="import-column">
+                        <div class="import-title">上次调拨明细导入（可选）</div>
+                        <div class="form-group">
+                            <label class="form-label">Excel文件</label>
+                            <input class="form-control" type="file" id="previousFile" accept=".xlsx, .xls">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">选择工作表</label>
+                            <select class="form-select" id="previousSheet" disabled>
+                                <option value="">请先导入文件</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <button id="analyzeBtn" class="btn btn-primary" disabled>分析数据</button>
+            </div>
+        </div>
+
+        <div class="row" id="resultsSection" style="display: none;">
+            <!-- 本次调拨异常明细 -->
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <span>本次调拨异常明细</span>
+                        <button id="exportCurrentErrors" class="btn btn-sm export-btn">导出Excel</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="currentErrorsTable">
+                                <thead>
+                                    <tr>
+                                        <th>产品ID</th>
+                                        <th>调出店铺</th>
+                                        <th>调入店铺</th>
+                                        <th>异常类型</th>
+                                        <th>调出数量</th>
+                                        <th>调入数量</th>
+                                        <th>数量差异</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 与上次调拨对比异常明细 -->
+            <div class="col-md-12" id="comparisonSection" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <span>与上次调拨对比异常明细</span>
+                        <button id="exportComparisonErrors" class="btn btn-sm export-btn">导出Excel</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="comparisonErrorsTable">
+                                <thead>
+                                    <tr>
+                                        <th>产品ID</th>
+                                        <th>店铺</th>
+                                        <th>异常类型</th>
+                                        <th>上次调拨方向</th>
+                                        <th>本次调拨方向</th>
+                                        <th>上次数量</th>
+                                        <th>本次数量</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <a href="http://junminwu.github.io/" target="_blank">wujunmin出品</a>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentWorkbook = null;
+        let previousWorkbook = null;
+        let currentData = [];
+        let previousData = [];
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 文件导入处理
+            document.getElementById('currentFile').addEventListener('change', handleFileUpload.bind(null, 'current'));
+            document.getElementById('previousFile').addEventListener('change', handleFileUpload.bind(null, 'previous'));
+            
+            // 工作表选择变化时更新按钮状态
+            document.getElementById('currentSheet').addEventListener('change', updateAnalyzeButton);
+            document.getElementById('previousSheet').addEventListener('change', updateAnalyzeButton);
+            
+            // 分析按钮点击事件
+            document.getElementById('analyzeBtn').addEventListener('click', analyzeData);
+            
+            // 导出按钮事件
+            document.getElementById('exportCurrentErrors').addEventListener('click', () => exportToExcel('currentErrorsTable', '本次调拨异常'));
+            document.getElementById('exportComparisonErrors').addEventListener('click', () => exportToExcel('comparisonErrorsTable', '对比异常'));
+        });
+
+        // 处理文件导入
+        function handleFileUpload(type, e) {
+            const file = e.target.files[0];
+            if (!file) {
+                resetFileInput(type);
+                return;
+            }
+            
+            showLoading(true);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // 存储workbook到全局变量
+                    if (type === 'current') {
+                        currentWorkbook = workbook;
+                    } else {
+                        previousWorkbook = workbook;
+                    }
+                    
+                    // 更新工作表选择框
+                    const sheetSelect = document.getElementById(`${type}Sheet`);
+                    sheetSelect.innerHTML = workbook.SheetNames.map(sheet => 
+                        `<option value="${sheet}">${sheet}</option>`
+                    ).join('');
+                    sheetSelect.disabled = false;
+                    
+                    updateAnalyzeButton();
+                    
+                } catch (error) {
+                    console.error(`Error processing ${type} file:`, error);
+                    alert(`处理${type === 'current' ? '本次' : '上次'}调拨文件时出错`);
+                    resetFileInput(type);
+                } finally {
+                    showLoading(false);
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('读取文件失败');
+                resetFileInput(type);
+                showLoading(false);
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 重置文件输入
+        function resetFileInput(type) {
+            document.getElementById(`${type}File`).value = '';
+            document.getElementById(`${type}Sheet`).innerHTML = '<option value="">请先导入文件</option>';
+            document.getElementById(`${type}Sheet`).disabled = true;
+            
+            if (type === 'current') {
+                currentWorkbook = null;
+                currentData = [];
+            } else {
+                previousWorkbook = null;
+                previousData = [];
+            }
+            
+            updateAnalyzeButton();
+        }
+
+        // 更新分析按钮状态
+        function updateAnalyzeButton() {
+            const currentSheet = document.getElementById('currentSheet').value;
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = !currentSheet;
+        }
+
+        // 显示/隐藏加载指示器
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'flex' : 'none';
+        }
+
+        // 分析数据
+        function analyzeData() {
+            console.log('Starting analysis...');
+            showLoading(true);
+            
+            try {
+                // 获取当前调拨数据
+                const currentSheetName = document.getElementById('currentSheet').value;
+                if (!currentSheetName || !currentWorkbook) {
+                    alert('请先导入并选择本次调拨的工作表');
+                    return;
+                }
+                
+                const currentWorksheet = currentWorkbook.Sheets[currentSheetName];
+                currentData = XLSX.utils.sheet_to_json(currentWorksheet);
+                
+                // 标准化数据格式
+                currentData = currentData.map(row => ({
+                    productId: row['产品ID'] || row['product_id'] || row['货品编号'] || '',
+                    fromStore: row['调出店铺'] || row['调出店铺名称'] || row['from_store'] || '',
+                    toStore: row['调入店铺'] || row['调入店铺名称'] || row['to_store'] || '',
+                    quantity: Number(row['调拨数量'] || row['数量'] || row['quantity'] || 0)
+                })).filter(row => row.productId && row.fromStore && row.toStore);
+                
+                // 获取上次调拨数据（如果有）
+                const previousSheetName = document.getElementById('previousSheet').value;
+                if (previousSheetName && previousWorkbook) {
+                    const previousWorksheet = previousWorkbook.Sheets[previousSheetName];
+                    previousData = XLSX.utils.sheet_to_json(previousWorksheet);
+                    
+                    // 标准化数据格式
+                    previousData = previousData.map(row => ({
+                        productId: row['产品ID'] || row['product_id'] || row['货品编号'] || '',
+                        fromStore: row['调出店铺'] || row['调出店铺名称'] || row['from_store'] || '',
+                        toStore: row['调入店铺'] || row['调入店铺名称'] || row['to_store'] || '',
+                        quantity: Number(row['调拨数量'] || row['数量'] || row['quantity'] || 0)
+                    })).filter(row => row.productId && row.fromStore && row.toStore);
+                    
+                    document.getElementById('comparisonSection').style.display = 'block';
+                } else {
+                    previousData = [];
+                    document.getElementById('comparisonSection').style.display = 'none';
+                }
+                
+                // 处理数据
+                processData();
+                document.getElementById('resultsSection').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Analysis failed:', error);
+                alert('分析数据时出错: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 处理数据并生成表格
+        function processData() {
+            // 1. 检查本次调拨异常
+            checkCurrentTransferErrors();
+            
+            // 2. 如果有上次调拨数据，检查对比异常
+            if (previousData.length > 0) {
+                checkTransferComparisonErrors();
+            }
+        }
+
+        // 检查本次调拨异常
+        function checkCurrentTransferErrors() {
+            const productTransferMap = {};
+            const errors = [];
+            
+            // 分析每个产品的调拨情况
+            currentData.forEach(row => {
+                const productId = row.productId;
+                const fromStore = row.fromStore;
+                const toStore = row.toStore;
+                const quantity = row.quantity;
+                
+                if (!productTransferMap[productId]) {
+                    productTransferMap[productId] = {
+                        outStores: {},
+                        inStores: {}
+                    };
+                }
+                
+                // 记录调出
+                if (fromStore && fromStore !== '库房') {
+                    if (!productTransferMap[productId].outStores[fromStore]) {
+                        productTransferMap[productId].outStores[fromStore] = 0;
+                    }
+                    productTransferMap[productId].outStores[fromStore] += quantity;
+                }
+                
+                // 记录调入
+                if (toStore && toStore !== '库房') {
+                    if (!productTransferMap[productId].inStores[toStore]) {
+                        productTransferMap[productId].inStores[toStore] = 0;
+                    }
+                    productTransferMap[productId].inStores[toStore] += quantity;
+                }
+            });
+            
+            // 找出异常情况
+            for (const productId in productTransferMap) {
+                const { outStores, inStores } = productTransferMap[productId];
+                
+                // 检查同一店铺既有调出又有调入
+                const allStores = new Set([
+                    ...Object.keys(outStores),
+                    ...Object.keys(inStores)
+                ]);
+                
+                allStores.forEach(store => {
+                    const outQty = outStores[store] || 0;
+                    const inQty = inStores[store] || 0;
+                    
+                    if (outQty > 0 && inQty > 0) {
+                        errors.push({
+                            productId,
+                            fromStore: store,
+                            toStore: store,
+                            type: '同一产品在同一店铺既有调出又有调入',
+                            outCount: outQty,
+                            inCount: inQty,
+                            difference: outQty - inQty
+                        });
+                    }
+                });
+            }
+            
+            // 显示异常表格
+            const tbody = document.querySelector('#currentErrorsTable tbody');
+            tbody.innerHTML = '';
+            
+            if (errors.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="7" class="text-center text-success">未发现异常调拨</td>';
+                tbody.appendChild(tr);
+            } else {
+                errors.forEach(error => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'error-row';
+                    tr.innerHTML = `
+                        <td>${error.productId}</td>
+                        <td>${error.fromStore}</td>
+                        <td>${error.toStore}</td>
+                        <td>${error.type}</td>
+                        <td>${error.outCount}</td>
+                        <td>${error.inCount}</td>
+                        <td>${error.difference}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        // 检查与上次调拨的对比异常
+        function checkTransferComparisonErrors() {
+            const currentTransfers = {};
+            const previousTransfers = {};
+            const errors = [];
+            
+            // 处理当前调拨数据
+            currentData.forEach(row => {
+                const productId = row.productId;
+                const fromStore = row.fromStore;
+                const toStore = row.toStore;
+                const quantity = row.quantity;
+                
+                if (!currentTransfers[productId]) {
+                    currentTransfers[productId] = {};
+                }
+                
+                // 记录调出
+                if (fromStore && fromStore !== '库房') {
+                    if (!currentTransfers[productId][fromStore]) {
+                        currentTransfers[productId][fromStore] = { direction: 'out', quantity: 0 };
+                    }
+                    currentTransfers[productId][fromStore].quantity += quantity;
+                }
+                
+                // 记录调入
+                if (toStore && toStore !== '库房') {
+                    if (!currentTransfers[productId][toStore]) {
+                        currentTransfers[productId][toStore] = { direction: 'in', quantity: 0 };
+                    }
+                    currentTransfers[productId][toStore].quantity += quantity;
+                }
+            });
+            
+            // 处理上次调拨数据
+            previousData.forEach(row => {
+                const productId = row.productId;
+                const fromStore = row.fromStore;
+                const toStore = row.toStore;
+                const quantity = row.quantity;
+                
+                if (!previousTransfers[productId]) {
+                    previousTransfers[productId] = {};
+                }
+                
+                // 记录调出
+                if (fromStore && fromStore !== '库房') {
+                    if (!previousTransfers[productId][fromStore]) {
+                        previousTransfers[productId][fromStore] = { direction: 'out', quantity: 0 };
+                    }
+                    previousTransfers[productId][fromStore].quantity += quantity;
+                }
+                
+                // 记录调入
+                if (toStore && toStore !== '库房') {
+                    if (!previousTransfers[productId][toStore]) {
+                        previousTransfers[productId][toStore] = { direction: 'in', quantity: 0 };
+                    }
+                    previousTransfers[productId][toStore].quantity += quantity;
+                }
+            });
+            
+            // 找出对比异常
+            for (const productId in currentTransfers) {
+                if (previousTransfers[productId]) {
+                    for (const store in currentTransfers[productId]) {
+                        if (previousTransfers[productId][store]) {
+                            const current = currentTransfers[productId][store];
+                            const previous = previousTransfers[productId][store];
+                            
+                            if ((current.direction === 'out' && previous.direction === 'in') ||
+                                (current.direction === 'in' && previous.direction === 'out')) {
+                                errors.push({
+                                    productId,
+                                    store,
+                                    type: '本次与上次调拨方向相反',
+                                    previousDirection: previous.direction === 'out' ? '调出' : '调入',
+                                    currentDirection: current.direction === 'out' ? '调出' : '调入',
+                                    previousQuantity: previous.quantity,
+                                    currentQuantity: current.quantity
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 显示对比异常表格
+            const tbody = document.querySelector('#comparisonErrorsTable tbody');
+            tbody.innerHTML = '';
+            
+            if (errors.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="7" class="text-center text-success">未发现对比异常</td>';
+                tbody.appendChild(tr);
+            } else {
+                errors.forEach(error => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'warning-row';
+                    tr.innerHTML = `
+                        <td>${error.productId}</td>
+                        <td>${error.store}</td>
+                        <td>${error.type}</td>
+                        <td>${error.previousDirection}</td>
+                        <td>${error.currentDirection}</td>
+                        <td>${error.previousQuantity}</td>
+                        <td>${error.currentQuantity}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        // 导出表格为Excel
+        function exportToExcel(tableId, fileName) {
+            const table = document.getElementById(tableId);
+            const ws = XLSX.utils.table_to_sheet(table);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            
+            // 生成文件名
+            const dateStr = new Date().toISOString().slice(0, 10);
+            const fullFileName = `${fileName}_${dateStr}.xlsx`;
+            
+            XLSX.writeFile(wb, fullFileName);
+        }
+    </script>
+</body>
+</html>

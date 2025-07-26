@@ -127,6 +127,91 @@
             background-color: #218838;
             border-color: #1e7e34;
         }
+        .summary-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        #transferSummaryChart {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+            overflow: visible;
+        }
+        .bar-out {
+            fill: tomato;
+        }
+        .bar-in {
+            fill: deepskyblue;
+        }
+        .bar-label {
+            font-size: 10px;
+            text-anchor: middle;
+            fill:rgba(255,0,0,0);
+        }
+        .axis-label {
+            font-size: 10px;
+            text-anchor: end;
+        }
+        .x-axis text {
+            transform: rotate(-90deg);
+            text-anchor: end;
+            font-size: 10px;
+        }
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            text-align: center;
+            min-width: 150px;
+            margin: 5px;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .chart-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+        .chart-svg {
+            display: block;
+            margin: 0 auto;
+        }
+        .axis text {
+            font-size: 10px;
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+        .zero-line {
+            stroke: #666;
+            stroke-dasharray: 2,2;
+        }
     </style>
 </head>
 <body>
@@ -185,6 +270,19 @@
         </div>
 
         <div class="row" id="resultsSection" style="display: none;">
+            <!-- 调拨汇总模块 -->
+            <div class="col-md-12">
+                <div class="summary-section">
+                    <div class="summary-title">本次调拨汇总</div>
+                    <div class="summary-stats" id="summaryStats">
+                        <!-- 统计数据将通过JavaScript动态填充 -->
+                    </div>
+                    <div class="chart-container">
+                        <svg id="transferSummaryChart" class="chart-svg" viewBox="0 0 980 400" preserveAspectRatio="xMidYMid meet"></svg>
+                    </div>
+                </div>
+            </div>
+
             <!-- 本次调拨异常明细 -->
             <div class="col-md-12">
                 <div class="card">
@@ -409,13 +507,220 @@
 
         // 处理数据并生成表格
         function processData() {
-            // 1. 检查本次调拨异常
+            // 1. 计算调拨汇总数据并生成图表
+            calculateAndRenderSummary();
+            
+            // 2. 检查本次调拨异常
             checkCurrentTransferErrors();
             
-            // 2. 如果有上次调拨数据，检查对比异常
+            // 3. 如果有上次调拨数据，检查对比异常
             if (previousData.length > 0) {
                 checkTransferComparisonErrors();
             }
+        }
+
+  // 计算调拨汇总数据并生成图表
+function calculateAndRenderSummary() {
+    const storeNetFlow = {};
+    let totalTransfers = 0;  // 修改这里：不再重复计算
+    let totalStores = 0;
+    let totalProducts = new Set();
+    
+    // 计算各店铺净流入流出
+    currentData.forEach(row => {
+        const fromStore = row.fromStore;
+        const toStore = row.toStore;
+        const quantity = row.quantity;
+        
+        // 记录产品数
+        totalProducts.add(row.productId);
+        
+        // 调出店铺（库房不算作店铺）
+        if (fromStore && fromStore !== '库房') {
+            if (!storeNetFlow[fromStore]) {
+                storeNetFlow[fromStore] = 0;
+                totalStores++;
+            }
+            storeNetFlow[fromStore] -= quantity;
+            // 移除这里的 totalTransfers += quantity;
+        }
+        
+        // 调入店铺（库房不算作店铺）
+        if (toStore && toStore !== '库房') {
+            if (!storeNetFlow[toStore]) {
+                storeNetFlow[toStore] = 0;
+                totalStores++;
+            }
+            storeNetFlow[toStore] += quantity;
+            // 移除这里的 totalTransfers += quantity;
+        }
+        
+        // 修改：每条调拨记录只计算一次
+        totalTransfers += quantity;
+    });
+    
+    // 更新统计卡片
+    updateSummaryStats(totalTransfers, totalStores, totalProducts.size);
+    
+    // 生成柱形图
+    renderSummaryChart(storeNetFlow);
+}
+
+        // 更新统计卡片
+        function updateSummaryStats(totalTransfers, totalStores, totalProducts) {
+            const statsContainer = document.getElementById('summaryStats');
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">总调拨数量</div>
+                    <div class="stat-value">${totalTransfers}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">涉及店铺数</div>
+                    <div class="stat-value">${totalStores}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">涉及产品数</div>
+                    <div class="stat-value">${totalProducts}</div>
+                </div>
+            `;
+        }
+
+        // 生成调拨汇总柱形图（原生SVG实现）
+        function renderSummaryChart(storeNetFlow) {
+            const svg = document.getElementById('transferSummaryChart');
+            svg.innerHTML = '';
+            
+            // 转换为数组并排序
+            const data = Object.keys(storeNetFlow).map(store => ({
+                store,
+                netFlow: storeNetFlow[store]
+            })).sort((a, b) => b.netFlow - a.netFlow);
+            
+            // 设置图表尺寸和边距
+            const margin = {top: 30, right: 30, bottom: 70, left: 60};
+            const width = 980 - margin.left - margin.right;
+            const height = 400 - margin.top - margin.bottom;
+            
+            // 计算比例尺
+            const maxValue = Math.max(...data.map(d => Math.abs(d.netFlow)), 10);
+            
+            // X轴比例尺
+            const xScale = width / Math.max(data.length, 1);
+            const barWidth = xScale * 0.7;
+            
+            // Y轴比例尺
+            const yScale = height / (maxValue * 2);
+            
+            // 创建主组
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.setAttribute("transform", `translate(${margin.left},${margin.top})`);
+            svg.appendChild(g);
+            
+            // 添加Y轴
+            const yAxisGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            yAxisGroup.setAttribute("class", "axis y-axis");
+            
+            // Y轴刻度线
+            const yTicks = 5;
+            const yTickStep = (maxValue * 2) / yTicks;
+            
+            for (let i = 0; i <= yTicks; i++) {
+                const tickValue = -maxValue + (i * yTickStep);
+                const yPos = height - ((tickValue + maxValue) * yScale);
+                
+                // 刻度线
+                const tickLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                tickLine.setAttribute("x1", 0);
+                tickLine.setAttribute("y1", yPos);
+                tickLine.setAttribute("x2", width);
+                tickLine.setAttribute("y2", yPos);
+                tickLine.setAttribute("stroke", "#ddd");
+                g.appendChild(tickLine);
+                
+                // 刻度标签
+                if (tickValue !== 0) {
+                    const tickLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    tickLabel.setAttribute("x", -5);
+                    tickLabel.setAttribute("y", yPos);
+                    tickLabel.setAttribute("dy", "0.35em");
+                    tickLabel.setAttribute("text-anchor", "end");
+                    tickLabel.setAttribute("class", "axis-label");
+                    tickLabel.textContent = tickValue;
+                    g.appendChild(tickLabel);
+                }
+            }
+            
+            // Y轴线
+            const yAxisLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            yAxisLine.setAttribute("x1", 0);
+            yAxisLine.setAttribute("y1", 0);
+            yAxisLine.setAttribute("x2", 0);
+            yAxisLine.setAttribute("y2", height);
+            yAxisLine.setAttribute("stroke", "#000");
+            g.appendChild(yAxisLine);
+            
+            // 添加0基准线
+            const zeroLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            zeroLine.setAttribute("x1", 0);
+            zeroLine.setAttribute("y1", height - (maxValue * yScale));
+            zeroLine.setAttribute("x2", width);
+            zeroLine.setAttribute("y2", height - (maxValue * yScale));
+            zeroLine.setAttribute("class", "zero-line");
+            g.appendChild(zeroLine);
+            
+            // 添加柱形
+            data.forEach((d, i) => {
+                const xPos = i * xScale + (xScale - barWidth) / 2;
+                const barHeight = Math.abs(d.netFlow) * yScale;
+                const yPos = d.netFlow > 0 
+                    ? height - (maxValue * yScale) - (d.netFlow * yScale)
+                    : height - (maxValue * yScale);
+                
+                // 柱形
+                const bar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                bar.setAttribute("x", xPos);
+                bar.setAttribute("y", yPos);
+                bar.setAttribute("width", barWidth);
+                bar.setAttribute("height", barHeight);
+                bar.setAttribute("class", d.netFlow > 0 ? "bar-in" : "bar-out");
+                g.appendChild(bar);
+                
+                // 数据标签
+                const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                label.setAttribute("x", xPos + barWidth / 2);
+                label.setAttribute("y", yPos - 5);
+                label.setAttribute("class", "bar-label");
+                label.textContent = d.netFlow > 0 ? `+${d.netFlow}` : d.netFlow;
+                g.appendChild(label);
+                
+                // X轴标签
+                const xLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                xLabel.setAttribute("x", xPos + barWidth / 2);
+                xLabel.setAttribute("y", height + 20);
+                xLabel.setAttribute("text-anchor", "end");
+                xLabel.setAttribute("transform", "rotate(-90," + (xPos + barWidth / 2) + "," + (height + 20) + ")");
+                xLabel.setAttribute("class", "axis-label");
+                xLabel.textContent = d.store;
+                g.appendChild(xLabel);
+            });
+            
+            // 添加Y轴标签
+            const yAxisLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            yAxisLabel.setAttribute("transform", "rotate(-90)");
+            yAxisLabel.setAttribute("y", -margin.left + 15);
+            yAxisLabel.setAttribute("x", -height / 2);
+            yAxisLabel.setAttribute("class", "axis-label");
+            yAxisLabel.textContent = "净流入/流出数量";
+            g.appendChild(yAxisLabel);
+            
+            // 添加X轴线
+            const xAxisLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            xAxisLine.setAttribute("x1", 0);
+            xAxisLine.setAttribute("y1", height);
+            xAxisLine.setAttribute("x2", width);
+            xAxisLine.setAttribute("y2", height);
+            xAxisLine.setAttribute("stroke", "#000");
+            g.appendChild(xAxisLine);
         }
 
         // 检查本次调拨异常

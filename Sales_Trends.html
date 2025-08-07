@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>产品销售爆发力分析 | wujunmin</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --gray-color: #95a5a6;
+            --border-color: #dfe6e9;
+            --bg-color: #f8f9fa;
+            --card-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #95a5a6;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+            padding-top: 20px;
+        }
+
+        .dashboard-header {
+            padding: 20px 30px;
+            background-color: var(--dark-color);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .dashboard-title {
+            margin: 0;
+            font-size: 30px;
+            font-weight: 700;
+        }
+        
+        .dashboard-content {
+            padding: 25px 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 15px 20px;
+            background-color: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        .section-body {
+            padding: 20px;
+        }
+        
+        .file-upload {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            outline: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--dark-color);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--bg-color);
+        }
+        
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 13px;
+        }
+        
+        .file-name {
+            font-size: 14px;
+            color: var(--gray-color);
+        }
+        
+        .field-mapping {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+        
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            padding-right: 30px;
+        }
+        
+        .status-message {
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .status-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(46, 204, 113, 0.2);
+        }
+        
+        .status-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(231, 76, 60, 0.2);
+        }
+        
+        .slicer-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            background-color: var(--bg-color);
+            border-radius: 6px;
+        }
+        
+        .slicer-label {
+            font-weight: 500;
+            color: var(--dark-color);
+            min-width: 100px;
+        }
+        
+        .slicer-input {
+            flex: 1;
+            max-width: 300px;
+        }
+        
+        .slicer-value {
+            min-width: 30px;
+            text-align: center;
+        }
+        
+        .content-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .table-container {
+            flex: 1;
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+        
+        .chart-container {
+            flex: 2;
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+        
+        .chart-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chart-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        .chart-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chart-body {
+            padding: 15px;
+            height: 450px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        th {
+            background-color: var(--bg-color);
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 500;
+            color: var(--dark-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        tr.selected {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .control-label {
+            font-size: 14px;
+            color: var(--dark-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">产品销售爆发力分析</h1>
+        </div>
+        
+        <div class="dashboard-content">
+            <div class="section">
+                <div class="section-header">数据导入</div>
+                <div class="section-body">
+                    <div class="file-upload">
+                        <button class="btn btn-primary" id="uploadBtn">选择Excel文件</button>
+                        <input type="file" id="fileInput" class="file-input" accept=".xlsx, .xls">
+                        <span class="file-name" id="fileName">未选择文件</span>
+                    </div>
+                    
+                    <div id="statusMessage" class="status-message" style="display:none;"></div>
+                    
+                    <div id="fieldMapping" class="field-mapping">
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">日期字段</label>
+                                <select id="dateField" class="form-control">
+                                    <option value="">-- 选择日期字段 --</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">产品ID字段</label>
+                                <select id="productIdField" class="form-control">
+                                    <option value="">-- 选择产品ID字段 --</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" style="flex:1;">
+                                <label class="form-label">销量字段</label>
+                                <select id="salesField" class="form-control">
+                                    <option value="">-- 选择销量字段 --</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" style="align-self: flex-end;">
+                                <button id="confirmMapping" class="btn btn-success">确认映射</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-body">
+                    <div class="slicer-container">
+                        <div class="slicer-label">连续N天增长</div>
+                        <input type="range" id="nDaysSlider" class="slicer-input" min="3" max="10" value="3">
+                        <span id="nDaysValue" class="slicer-value">3</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="content-container">
+                <div class="table-container">
+                    <div class="section-header">产品销量汇总</div>
+                    <div class="section-body" style="padding:0;">
+                        <table id="productTable">
+                            <thead>
+                                <tr>
+                                    <th>产品ID</th>
+                                    <th>总销量</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productTableBody">
+                                <!-- 表格内容将通过JavaScript动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">销售趋势分析</h3>
+                        <div class="chart-controls">
+                            <div class="control-group">
+                                <span class="control-label">视图模式</span>
+                                <button id="toggleViewMode" class="btn btn-outline btn-sm">单产品</button>
+                                <button id="toggleGlobalView" class="btn btn-outline btn-sm active">全局</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-body">
+                        <div id="salesChart" style="width: 100%; height: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   <footer>
+        <a href="http://junminwu.github.io" target="_blank">wujunmin出品</a>
+    </footer>
+
+
+    <script>
+        // 全局变量
+        let rawData = [];
+        let processedData = [];
+        let selectedProducts = [];
+        let nDays = 3;
+        let isGlobalView = true;  // 默认全局模式
+        let myChart;
+        
+        // DOM元素
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fileName = document.getElementById('fileName');
+        const fieldMapping = document.getElementById('fieldMapping');
+        const dateFieldSelect = document.getElementById('dateField');
+        const productIdFieldSelect = document.getElementById('productIdField');
+        const salesFieldSelect = document.getElementById('salesField');
+        const confirmMappingBtn = document.getElementById('confirmMapping');
+        const statusMessage = document.getElementById('statusMessage');
+        const nDaysSlider = document.getElementById('nDaysSlider');
+        const nDaysValue = document.getElementById('nDaysValue');
+        const productTableBody = document.getElementById('productTableBody');
+        const toggleViewModeBtn = document.getElementById('toggleViewMode');
+        const toggleGlobalViewBtn = document.getElementById('toggleGlobalView');
+        const salesChartEl = document.getElementById('salesChart');
+        
+        // 初始化ECharts
+        myChart = echarts.init(salesChartEl);
+        
+        // 事件监听器
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileUpload);
+        confirmMappingBtn.addEventListener('click', confirmFieldMapping);
+        nDaysSlider.addEventListener('input', updateNDaysValue);
+        nDaysSlider.addEventListener('change', updateChart);
+        toggleViewModeBtn.addEventListener('click', () => toggleViewMode(false));
+        toggleGlobalViewBtn.addEventListener('click', () => toggleViewMode(true));
+        
+        // 窗口大小变化时重新调整图表大小
+        window.addEventListener('resize', function() {
+            myChart.resize();
+        });
+        
+        // 文件上传处理
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            fileName.textContent = file.name;
+            statusMessage.style.display = 'none';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // 假设使用第一个工作表
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    
+                    // 转换为JSON
+                    rawData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (rawData.length === 0) {
+                        showStatus('Excel文件中没有数据', 'error');
+                        return;
+                    }
+                    
+                    // 填充字段映射下拉框
+                    populateFieldMapping(Object.keys(rawData[0]));
+                    fieldMapping.style.display = 'block';
+                    
+                } catch (error) {
+                    console.error('Error reading Excel file:', error);
+                    showStatus('读取Excel文件时出错: ' + error.message, 'error');
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // 填充字段映射下拉框
+        function populateFieldMapping(fields) {
+            // 清空现有选项
+            dateFieldSelect.innerHTML = '<option value="">-- 选择日期字段 --</option>';
+            productIdFieldSelect.innerHTML = '<option value="">-- 选择产品ID字段 --</option>';
+            salesFieldSelect.innerHTML = '<option value="">-- 选择销量字段 --</option>';
+            
+            // 添加新选项
+            fields.forEach(field => {
+                dateFieldSelect.add(new Option(field, field));
+                productIdFieldSelect.add(new Option(field, field));
+                salesFieldSelect.add(new Option(field, field));
+            });
+        }
+        
+        // 确认字段映射
+        function confirmFieldMapping() {
+            const dateField = dateFieldSelect.value;
+            const productIdField = productIdFieldSelect.value;
+            const salesField = salesFieldSelect.value;
+            
+            if (!dateField || !productIdField || !salesField) {
+                showStatus('请映射所有必需的字段', 'error');
+                return;
+            }
+            
+            // 处理数据
+            try {
+                processedData = processRawData(rawData, dateField, productIdField, salesField);
+                updateProductTable();
+                updateChart();
+                showStatus('数据导入成功', 'success');
+            } catch (error) {
+                console.error('Error processing data:', error);
+                showStatus('处理数据时出错: ' + error.message, 'error');
+            }
+        }
+        
+        // 处理原始数据
+        function processRawData(data, dateField, productIdField, salesField) {
+            const result = [];
+            
+            data.forEach(item => {
+                if (!item[dateField] || !item[productIdField] || item[salesField] === undefined) {
+                    return; // 跳过无效数据
+                }
+                
+                // 尝试解析日期
+                let date;
+                if (typeof item[dateField] === 'number') {
+                    // 处理Excel日期序列号
+                    date = new Date(Math.round((item[dateField] - 25569) * 86400 * 1000));
+                } else if (typeof item[dateField] === 'string') {
+                    // 尝试解析字符串日期
+                    date = new Date(item[dateField]);
+                    if (isNaN(date.getTime())) {
+                        // 如果直接解析失败，尝试其他格式
+                        const parts = item[dateField].split(/[-/]/);
+                        if (parts.length === 3) {
+                            date = new Date(parts[0], parts[1] - 1, parts[2]);
+                        }
+                    }
+                } else if (item[dateField] instanceof Date) {
+                    date = item[dateField];
+                }
+                
+                if (!date || isNaN(date.getTime())) {
+                    console.warn(`无法解析日期: ${item[dateField]}`, item);
+                    return; // 跳过无效日期
+                }
+                
+                // 标准化日期到天，忽略时间部分
+                date.setHours(0, 0, 0, 0);
+                
+                // 确保销量是数字
+                const sales = Number(item[salesField]) || 0;
+                
+                result.push({
+                    date: date,
+                    productId: String(item[productIdField]),
+                    sales: sales
+                });
+            });
+            
+            return result;
+        }
+        
+        // 更新N天增长的值显示
+        function updateNDaysValue() {
+            nDays = parseInt(nDaysSlider.value);
+            nDaysValue.textContent = nDays;
+        }
+        
+        // 切换视图模式
+        function toggleViewMode(global) {
+            isGlobalView = global;
+            if (global) {
+                toggleViewModeBtn.classList.remove('active');
+                toggleGlobalViewBtn.classList.add('active');
+            } else {
+                toggleViewModeBtn.classList.add('active');
+                toggleGlobalViewBtn.classList.remove('active');
+            }
+            updateChart();
+        }
+        
+        // 更新产品表格
+        function updateProductTable() {
+            // 按产品ID分组并计算总销量
+            const productSales = {};
+            processedData.forEach(item => {
+                if (!productSales[item.productId]) {
+                    productSales[item.productId] = 0;
+                }
+                productSales[item.productId] += item.sales;
+            });
+            
+            // 转换为数组并排序
+            const productArray = Object.keys(productSales).map(productId => ({
+                productId,
+                totalSales: productSales[productId]
+            })).sort((a, b) => b.totalSales - a.totalSales);
+            
+            // 更新表格
+            productTableBody.innerHTML = '';
+            productArray.forEach(product => {
+                const row = document.createElement('tr');
+                row.dataset.productId = product.productId;
+                row.innerHTML = `
+                    <td>${product.productId}</td>
+                    <td>${product.totalSales.toLocaleString()}</td>
+                `;
+                
+                row.addEventListener('click', () => {
+                    row.classList.toggle('selected');
+                    updateSelectedProducts();
+                });
+                
+                productTableBody.appendChild(row);
+            });
+        }
+        
+        // 更新选中的产品
+        function updateSelectedProducts() {
+            selectedProducts = Array.from(document.querySelectorAll('#productTableBody tr.selected'))
+                .map(row => row.dataset.productId);
+            updateChart();
+        }
+        
+        // 获取日期范围内的所有日期
+        function getAllDatesInRange(minDate, maxDate) {
+            const dates = [];
+            const currentDate = new Date(minDate);
+            
+            while (currentDate <= maxDate) {
+                dates.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            return dates;
+        }
+        
+        // 更新图表
+        function updateChart() {
+            if (processedData.length === 0) return;
+            
+            // 获取所有日期范围
+            const allDates = Array.from(new Set(processedData.map(item => item.date)));
+            const minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+            const maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+            
+            // 强制显示所有日期（包括无数据日期）
+            const displayDates = getAllDatesInRange(minDate, maxDate);
+            displayDates.sort((a, b) => a - b);
+            
+            // 获取要显示的产品数据
+            const productsToShow = selectedProducts.length > 0 
+                ? selectedProducts 
+                : Array.from(new Set(processedData.map(item => item.productId)));
+            
+            // 准备图表数据
+            const series = [];
+            
+            if (isGlobalView) {
+                // 全局视图 - 显示所有选中产品的销量和
+                const globalData = {};
+                
+                // 按日期汇总所有选中产品的销量
+                processedData
+                    .filter(item => productsToShow.includes(item.productId))
+                    .forEach(item => {
+                        const dateStr = item.date.toISOString().split('T')[0];
+                        if (!globalData[dateStr]) {
+                            globalData[dateStr] = 0;
+                        }
+                        globalData[dateStr] += item.sales;
+                    });
+                
+                // 创建数据点数组
+                const dataPoints = [];
+                const dateSalesPairs = [];
+                
+                displayDates.forEach(date => {
+                    const dateStr = date.toISOString().split('T')[0];
+                    const sales = globalData[dateStr] || 0; // 无数据日期显示为0
+                    
+                    dataPoints.push([date, sales]);
+                    dateSalesPairs.push({ date, sales });
+                });
+                
+                // 查找连续增长的时间段
+                const increasingRanges = findIncreasingRanges(dateSalesPairs, nDays);
+                
+                // 创建系列数据，高亮连续增长部分
+                const lineData = dataPoints.map(point => [point[0], point[1]]);
+                const highlightSegments = [];
+                
+                // 生成高亮线段
+                increasingRanges.forEach(range => {
+                    const startIndex = dateSalesPairs.findIndex(p => p.date.getTime() === range.start.getTime());
+                    const endIndex = dateSalesPairs.findIndex(p => p.date.getTime() === range.end.getTime());
+                    
+                    if (startIndex !== -1 && endIndex !== -1) {
+                        highlightSegments.push({
+                            coordRange: [
+                                dateSalesPairs[startIndex].date,
+                                dateSalesPairs[endIndex].date
+                            ],
+                            dataRange: [startIndex, endIndex]
+                        });
+                    }
+                });
+                
+                // 创建系列
+                series.push({
+                    name: '总销量',
+                    type: 'line',
+                    data: lineData,
+                    smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 6,
+                    lineStyle: {
+                        width: 2,
+                        color: '#3498db'
+                    },
+                    itemStyle: {
+                        color: '#3498db'
+                    },
+                    markLine: {
+                        silent: true,
+                        symbol: 'none',
+                        lineStyle: {
+                            color: 'tomato',
+                            width: 3
+                        },
+                        data: highlightSegments.map(seg => ([
+                            {
+                                coord: [seg.coordRange[0], lineData[seg.dataRange[0]][1]],
+                                lineStyle: {
+                                    color: 'tomato',
+                                    width: 3
+                                }
+                            },
+                            {
+                                coord: [seg.coordRange[1], lineData[seg.dataRange[1]][1]]
+                            }
+                        ]))
+                    }
+                });
+            } else {
+                // 单产品视图 - 每个产品一条线
+                productsToShow.forEach(productId => {
+                    // 按日期分组该产品的销量
+                    const productData = {};
+                    processedData
+                        .filter(item => item.productId === productId)
+                        .forEach(item => {
+                            const dateStr = item.date.toISOString().split('T')[0];
+                            if (!productData[dateStr]) {
+                                productData[dateStr] = 0;
+                            }
+                            productData[dateStr] += item.sales;
+                        });
+                    
+                    // 创建数据点数组
+                    const dataPoints = [];
+                    const dateSalesPairs = [];
+                    
+                    displayDates.forEach(date => {
+                        const dateStr = date.toISOString().split('T')[0];
+                        const sales = productData[dateStr] || 0; // 无数据日期显示为0
+                        
+                        dataPoints.push([date, sales]);
+                        dateSalesPairs.push({ date, sales });
+                    });
+                    
+                    // 查找连续增长的时间段
+                    const increasingRanges = findIncreasingRanges(dateSalesPairs, nDays);
+                    
+                    // 创建系列数据，高亮连续增长部分
+                    const lineData = dataPoints.map(point => [point[0], point[1]]);
+                    const highlightSegments = [];
+                    const color = getRandomColor();
+                    
+                    // 生成高亮线段
+                    increasingRanges.forEach(range => {
+                        const startIndex = dateSalesPairs.findIndex(p => p.date.getTime() === range.start.getTime());
+                        const endIndex = dateSalesPairs.findIndex(p => p.date.getTime() === range.end.getTime());
+                        
+                        if (startIndex !== -1 && endIndex !== -1) {
+                            highlightSegments.push({
+                                coordRange: [
+                                    dateSalesPairs[startIndex].date,
+                                    dateSalesPairs[endIndex].date
+                                ],
+                                dataRange: [startIndex, endIndex]
+                            });
+                        }
+                    });
+                    
+                    // 创建系列
+                    series.push({
+                        name: productId,
+                        type: 'line',
+                        data: lineData,
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        lineStyle: {
+                            width: 2,
+                            color: color
+                        },
+                        itemStyle: {
+                            color: color
+                        },
+                        markLine: {
+                            silent: true,
+                            symbol: 'none',
+                            lineStyle: {
+                                color: 'tomato',
+                                width: 3
+                            },
+                            data: highlightSegments.map(seg => ([
+                                {
+                                    coord: [seg.coordRange[0], lineData[seg.dataRange[0]][1]],
+                                    lineStyle: {
+                                        color: 'tomato',
+                                        width: 3
+                                    }
+                                },
+                                {
+                                    coord: [seg.coordRange[1], lineData[seg.dataRange[1]][1]]
+                                }
+                            ]))
+                        }
+                    });
+                });
+            }
+            
+            // 设置图表选项
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        let result = echarts.format.formatTime('yyyy-MM-dd', params[0].value[0]) + '<br/>';
+                        params.forEach(param => {
+                            result += `${param.seriesName}: ${param.value[1]}<br/>`;
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    data: series.map(s => s.name),
+                    top: 0,
+                    selectedMode: isGlobalView ? false : true
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                toolbox: {
+                    feature: {
+                        dataZoom: {
+                            yAxisIndex: 'none'
+                        },
+                        restore: {},
+                        saveAsImage: {}
+                    }
+                },
+                xAxis: {
+                    type: 'time',
+                    boundaryGap: false,
+                    axisLabel: {
+                        formatter: function(value) {
+                            return echarts.format.formatTime('MM-dd', value);
+                        },
+                        rotate: 90,  // X轴标签旋转90度，纵向显示
+                        interval: 0  // 强制显示所有标签
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '销量'
+                },
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        start: 0,
+                        end: 100
+                    },
+                    {
+                        start: 0,
+                        end: 100
+                    }
+                ],
+                series: series
+            };
+            
+            // 设置图表选项
+            myChart.setOption(option, true);
+        }
+        
+        // 查找连续增长的时间段
+        function findIncreasingRanges(dateSalesPairs, n) {
+            const ranges = [];
+            let startIndex = -1;
+            let count = 0;
+            
+            for (let i = 1; i < dateSalesPairs.length; i++) {
+                if (dateSalesPairs[i].sales > dateSalesPairs[i - 1].sales) {
+                    if (startIndex === -1) {
+                        startIndex = i - 1;
+                        count = 2;
+                    } else {
+                        count++;
+                    }
+                } else {
+                    if (count >= n) {
+                        ranges.push({
+                            start: dateSalesPairs[startIndex].date,
+                            end: dateSalesPairs[i - 1].date
+                        });
+                    }
+                    startIndex = -1;
+                    count = 0;
+                }
+            }
+            
+            // 检查最后一段
+            if (count >= n) {
+                ranges.push({
+                    start: dateSalesPairs[startIndex].date,
+                    end: dateSalesPairs[dateSalesPairs.length - 1].date
+                });
+            }
+            
+            return ranges;
+        }
+        
+        // 显示状态消息
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message status-${type}`;
+            statusMessage.style.display = 'block';
+        }
+        
+        // 生成随机颜色
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+    </script>
+</body>
+</html>

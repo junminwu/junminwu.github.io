@@ -96,82 +96,15 @@
             border-top: 1px solid #eaeaea;
             padding-top: 20px;
         }
-        
-        /* 电梯导航样式 */
-        .elevator-nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            display: flex;
-            justify-content: center;
-            padding: 10px 0;
-        }
-        
-        .elevator-nav-container {
-            display: flex;
-            justify-content: space-around;
-            max-width: 1200px;
-            width: 100%;
-            padding: 0 20px;
-        }
-        
-        .elevator-nav a {
-            text-decoration: none;
-            color: #3498db;
-            font-weight: bold;
-            padding: 8px 15px;
-            border-radius: 4px;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            margin: 0 5px;
-        }
-        
-        .elevator-nav a:hover,
-        .elevator-nav a.active {
-            background-color: #3498db;
-            color: white;
-        }
-        
-        /* 添加顶部内边距以避免内容被导航栏遮挡 */
-        body {
-            padding-top: 60px;
-        }
-        
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .elevator-nav-container {
-                flex-wrap: wrap;
-            }
-            
-            .elevator-nav a {
-                margin: 5px;
-                font-size: 14px;
-            }
-            
-            body {
-                padding-top: 80px;
-            }
-        }
     </style>
 </head>
 <body>
-    <!-- 电梯导航 -->
-    <nav class="elevator-nav">
-        <div class="elevator-nav-container">
-            <a href="#power-bi-svg-html" class="active">Power BI SVG/HTML 专题</a>
-            <a href="#retail-industry">零售业专题</a>
-            <a href="#power-bi-websites">常用 Power BI 网站</a>
-            <a href="#find-me">找到我</a>
-        </div>
-    </nav>
-
     <div class="container">
-
-        <div class="category" id="power-bi-svg-html">
+        <header>
+            <h1>wujunmin</h1>
+            <p class="subtitle"><a href="https://junminwu.github.io/about.html" target="_blank">关于我</a></p>
+        </header>
+        <div class="category">
             <h2 class="category-title">Power BI SVG/HTML 专题</h2>
             <ul class="link-list">
                 <li class="link-item">
@@ -249,7 +182,7 @@
             </ul>
         </div>
 
-        <div class="category" id="retail-industry">
+        <div class="category">
             <h2 class="category-title">零售业专题</h2>
             <ul class="link-list">
                 <li class="link-item">
@@ -308,7 +241,7 @@
             </ul>
         </div>
                 
-        <div class="category" id="power-bi-websites">
+        <div class="category">
             <h2 class="category-title">常用 Power BI 网站</h2>
             <ul class="link-list">
                 <li class="link-item">
@@ -340,15 +273,11 @@
 
 
         
-        <div class="category" id="find-me">
+        <div class="category">
             <h2 class="category-title">找到我</h2>
             <ul class="link-list">
                 <li class="link-item">
-                    <a href="https://junminwu.github.io/about.html" target="_blank">我是谁</a>
-                    <p class="link-desc">简短自我介绍</p>
-                </li>
-                <li class="link-item">
-                    <a href="https://mp.weixin.qq.com/s/BYefos4G799ZLtHpK7aMNw" target="_blank">微信公众号</a>
+                    <a href="https://mp.weixin.qq.com/s/ya3RavLg-taDy1pmfbua-Q" target="_blank">微信公众号</a>
                     <p class="link-desc">微信公众号分享 Power BI/Excel 文章</p>
                 </li>
                 <li class="link-item">
@@ -367,54 +296,5 @@
         </footer>
     </div>
 
-    <script>
-        // 电梯导航功能
-        document.addEventListener('DOMContentLoaded', function() {
-            const navLinks = document.querySelectorAll('.elevator-nav a');
-            const sections = Array.from(navLinks).map(link => {
-                const href = link.getAttribute('href');
-                return document.querySelector(href);
-            });
-            
-            // 点击导航项平滑滚动到对应区域
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('href');
-                    const targetSection = document.querySelector(targetId);
-                    
-                    if (targetSection) {
-                        window.scrollTo({
-                            top: targetSection.offsetTop - 60, // 减去导航栏高度
-                            behavior: 'smooth'
-                        });
-                    }
-                });
-            });
-            
-            // 滚动时高亮当前区域
-            function updateActiveNav() {
-                let currentSection = '';
-                const scrollPosition = window.scrollY + 80; // 增加偏移量以提前切换
-                
-                sections.forEach(section => {
-                    if (section && scrollPosition >= section.offsetTop) {
-                        currentSection = '#' + section.id;
-                    }
-                });
-                
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.getAttribute('href') === currentSection) {
-                        link.classList.add('active');
-                    }
-                });
-            }
-            
-            window.addEventListener('scroll', updateActiveNav);
-            updateActiveNav(); // 初始化
-        });
-    </script>
 
-</body>
-</html>
+</body></html>

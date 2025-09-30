@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极速富表格工具 | wujunmin</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: deepskyblue;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+            --success-color: #27ae60;
+            --border-radius: 4px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--primary-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+        
+        .upload-section {
+            background-color: var(--light-color);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .upload-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .controls-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+        
+        .column-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .column-control {
+            flex: 1;
+            min-width: 200px;
+            background-color: var(--light-color);
+            padding: 15px;
+            border-radius: var(--border-radius);
+        }
+        
+        .column-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--dark-color);
+        }
+        
+        .control-group {
+            margin-bottom: 10px;
+        }
+        
+        .control-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: var(--border-radius);
+            font-size: 14px;
+        }
+        
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .color-input {
+            width: 40px;
+            height: 30px;
+            padding: 0;
+            border: none;
+        }
+        
+        .preview-section {
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+        
+        .preview-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        th, td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e0e0e0;
+            border-right: 1px solid #e0e0e0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative;
+        }
+        
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        th:hover {
+            background-color: #1a252f;
+        }
+        
+        th.sortable::after {
+            content: "↕";
+            margin-left: 5px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        th.sortable:hover::after {
+            opacity: 0.7;
+        }
+        
+        th.sort-asc::after {
+            content: "↑";
+            opacity: 1;
+        }
+        
+        th.sort-desc::after {
+            content: "↓";
+            opacity: 1;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .cell-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        
+        .svg-container {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        .rounded-bg-cell {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        
+        .heat-cell {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+        
+        .heat-text {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .text-left {
+            text-align: left;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .export-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .export-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .export-btn:hover {
+            background-color: #219653;
+        }
+        
+        footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #eaeaea;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        footer a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>极速富表格工具</h1>
+            <p class="subtitle">导入表格数据，添加迷你图（排名、环形图、进度条、条形图等），并导出为PNG格式</p>
+        </header>
+        
+        <section class="upload-section">
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.csv">
+            <button class="upload-btn" id="uploadBtn">选择文件</button>
+            <p style="margin-top: 10px;">支持XLSX和CSV格式</p>
+        </section>
+        
+        <section class="controls-section" id="controlsSection">
+            <h2>列设置</h2>
+            <div class="column-controls" id="columnControls">
+                <!-- 动态生成的列控制项 -->
+            </div>
+        </section>
+        
+        <section class="preview-section" id="previewSection">
+            <h2 class="preview-title">预览</h2>
+            <div id="tablePreview">
+                <!-- 动态生成的表格预览 -->
+            </div>
+        </section>
+        
+        <section class="export-section">
+            <button class="export-btn" id="exportBtn">导出为PNG</button>
+        </section>
+        
+        <footer>
+            <p><a href="https://junminwu.github.io" target="_blank">wujunmin</a></p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const controlsSection = document.getElementById('controlsSection');
+            const columnControls = document.getElementById('columnControls');
+            const previewSection = document.getElementById('previewSection');
+            const tablePreview = document.getElementById('tablePreview');
+            const exportBtn = document.getElementById('exportBtn');
+            
+            let tableData = [];
+            let columnSettings = [];
+            let columnTypes = [];
+            let columnHasNegative = []; // 记录每列是否包含负数
+            let sortState = {}; // 存储每列的排序状态
+            let originalFormats = []; // 存储原始数据格式
+            
+            // 导入按钮点击事件
+            uploadBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // 文件输入变化事件
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files.length) {
+                    handleFileUpload(fileInput.files[0]);
+                }
+            });
+            
+            // 处理文件导入
+            function handleFileUpload(file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        let data;
+                        if (file.name.endsWith('.csv')) {
+                            // 处理CSV文件
+                            const csvText = e.target.result;
+                            tableData = parseCSV(csvText);
+                            // 对于CSV，我们无法获取原始格式，所以使用默认格式
+                            detectColumnTypes();
+                            preserveOriginalFormats();
+                        } else {
+                            // 处理XLSX文件
+                            data = new Uint8Array(e.target.result);
+                            let workbook = XLSX.read(data, {type: 'array'});
+                            
+                            // 获取第一个工作表
+                            const firstSheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheetName];
+                            
+                            // 转换为JSON，保留原始格式
+                            tableData = XLSX.utils.sheet_to_json(worksheet, {header: 1, raw: false});
+                            
+                            // 检测列类型并保留原始格式
+                            detectColumnTypes();
+                            preserveOriginalFormats();
+                        }
+                        
+                        // 初始化列设置
+                        initializeColumnSettings();
+                        
+                        // 显示控制面板
+                        controlsSection.style.display = 'block';
+                        
+                        // 生成预览
+                        generatePreview();
+                        
+                    } catch (error) {
+                        console.error('Error processing file:', error);
+                        alert('文件处理出错，请确保导入的是有效的XLSX或CSV文件。');
+                    }
+                };
+                
+                if (file.name.endsWith('.csv')) {
+                    reader.readAsText(file);
+                } else {
+                    reader.readAsArrayBuffer(file);
+                }
+            }
+            
+            // 解析CSV文件
+            function parseCSV(csvText) {
+                const lines = csvText.split('\n');
+                const result = [];
+                
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].trim() === '') continue;
+                    
+                    // 简单的CSV解析，处理引号内的逗号
+                    const regex = /(?:,|^)(?:"([^"]*(?:""[^"]*)*)"|([^",]*))/g;
+                    const row = [];
+                    let match;
+                    
+                    while ((match = regex.exec(lines[i])) !== null) {
+                        row.push(match[1] !== undefined ? match[1].replace(/""/g, '"') : match[2]);
+                    }
+                    
+                    result.push(row);
+                }
+                
+                return result;
+            }
+            
+            // 检测列类型 - 改进版，识别带格式的数字
+            function detectColumnTypes() {
+                columnTypes = [];
+                columnHasNegative = [];
+                
+                if (tableData.length === 0) return;
+                
+                const headers = tableData[0];
+                
+                for (let i = 0; i < headers.length; i++) {
+                    let isNumeric = true;
+                    let numericCount = 0;
+                    let totalCount = 0;
+                    let hasNegative = false;
+                    
+                    // 检查前几行数据（最多10行）
+                    for (let row = 1; row < Math.min(tableData.length, 11); row++) {
+                        if (tableData[row][i] !== undefined && tableData[row][i] !== '') {
+                            const value = tableData[row][i].toString().trim();
+                            totalCount++;
+                            
+                            // 检查是否是带格式的数字（包含千分位符、百分号等）
+                            if (isFormattedNumber(value)) {
+                                numericCount++;
+                                
+                                // 检查是否包含负数
+                                const cleanValue = cleanFormattedNumber(value);
+                                if (parseFloat(cleanValue) < 0) {
+                                    hasNegative = true;
+                                }
+                            } else if (isNaN(value) && value !== 'NaN') {
+                                isNumeric = false;
+                            } else {
+                                numericCount++;
+                                
+                                // 检查是否包含负数
+                                if (parseFloat(value) < 0) {
+                                    hasNegative = true;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 如果大部分值都是数字格式，则认为是数字列
+                    columnTypes.push(numericCount / totalCount > 0.7 ? 'numeric' : 'text');
+                    columnHasNegative.push(hasNegative);
+                }
+            }
+            
+            // 检查是否是带格式的数字
+            function isFormattedNumber(value) {
+                if (typeof value !== 'string') return false;
+                
+                // 移除千分位符和百分号
+                const cleanedValue = value.replace(/,/g, '').replace(/%/g, '');
+                
+                // 检查是否是数字
+                return !isNaN(cleanedValue) && cleanedValue !== '';
+            }
+            
+            // 保留原始数据格式
+            function preserveOriginalFormats() {
+                originalFormats = [];
+                
+                if (tableData.length === 0) return;
+                
+                const headers = tableData[0];
+                
+                for (let i = 0; i < headers.length; i++) {
+                    // 存储每列的原始格式
+                    const columnFormats = [];
+                    
+                    for (let row = 0; row < tableData.length; row++) {
+                        if (tableData[row][i] !== undefined) {
+                            // 保留原始值
+                            columnFormats.push(tableData[row][i]);
+                        } else {
+                            columnFormats.push('');
+                        }
+                    }
+                    
+                    originalFormats.push(columnFormats);
+                }
+            }
+            
+            // 初始化列设置
+            function initializeColumnSettings() {
+                columnSettings = [];
+                columnControls.innerHTML = '';
+                sortState = {};
+                
+                if (tableData.length === 0) return;
+                
+                const headers = tableData[0];
+                
+                for (let i = 0; i < headers.length; i++) {
+                    // 设置默认样式：文本列使用圆角背景，数值列使用排名图标
+                    const defaultType = columnTypes[i] === 'numeric' ? 'ranking' : 'rounded-bg';
+                    
+                    columnSettings.push({
+                        type: defaultType,
+                        color: '#00bfff' // deepskyblue的十六进制值
+                    });
+                    
+                    sortState[i] = { sorted: false, ascending: true };
+                    
+                    const columnControl = document.createElement('div');
+                    columnControl.className = 'column-control';
+                    
+                    // 根据列类型设置可用的SVG选项
+                    let svgOptions = '';
+                    
+                    if (columnTypes[i] === 'numeric') {
+                        const hasNegative = columnHasNegative[i];
+                        
+                        svgOptions = '<option value="none">无</option>' +
+                            '<option value="ranking">排名图标</option>' +
+                            '<option value="bar">条形图</option>' +
+                            '<option value="heat">热力图</option>' +
+                            '<option value="rounded-bg">圆角背景</option>';
+                        
+                        // 如果列不包含负数，则添加进度条和环形图选项
+                        if (!hasNegative) {
+                            svgOptions = '<option value="none">无</option>' +
+                                '<option value="ranking">排名图标</option>' +
+                                '<option value="progress">进度条</option>' +
+                                '<option value="bar">条形图</option>' +
+                                '<option value="donut">环形图</option>' +
+                                '<option value="heat">热力图</option>' +
+                                '<option value="rounded-bg">圆角背景</option>';
+                        }
+                    } else {
+                        svgOptions = '<option value="none">无</option>' +
+                            '<option value="rounded-bg">圆角背景</option>';
+                    }
+                    
+                    columnControl.innerHTML = `
+                        <div class="column-title">${headers[i]}</div>
+                        <div class="control-group">
+                            <label class="control-label">SVG类型</label>
+                            <select class="svg-type" data-index="${i}">
+                                ${svgOptions}
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">颜色</label>
+                            <div class="color-picker">
+                                <input type="color" class="color-input" data-index="${i}" value="#00bfff">
+                                <span class="color-value">deepskyblue</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    columnControls.appendChild(columnControl);
+                    
+                    // 设置默认选中项
+                    const typeSelect = columnControl.querySelector('.svg-type');
+                    typeSelect.value = defaultType;
+                    
+                    // 添加事件监听器
+                    const colorInput = columnControl.querySelector('.color-input');
+                    const colorValue = columnControl.querySelector('.color-value');
+                    
+                    typeSelect.addEventListener('change', function() {
+                        columnSettings[i].type = this.value;
+                        generatePreview();
+                    });
+                    
+                    colorInput.addEventListener('input', function() {
+                        columnSettings[i].color = this.value;
+                        // 更新颜色显示文本
+                        colorValue.textContent = this.value === '#00bfff' ? 'deepskyblue' : this.value;
+                        generatePreview();
+                    });
+                }
+            }
+            
+            // 生成预览
+            function generatePreview() {
+                if (tableData.length === 0) return;
+                
+                let html = '<table><thead><tr>';
+                
+                // 表头
+                const headers = tableData[0];
+                for (let i = 0; i < headers.length; i++) {
+                    const sortClass = sortState[i].sorted ? 
+                        (sortState[i].ascending ? 'sort-asc' : 'sort-desc') : 
+                        'sortable';
+                    
+                    html += `
+                        <th class="${sortClass} ${columnTypes[i] === 'numeric' ? 'text-right' : 'text-left'}" data-index="${i}">
+                            ${headers[i]}
+                        </th>
+                    `;
+                }
+                
+                html += '</tr></thead><tbody>';
+                
+                // 数据行
+                for (let row = 1; row < tableData.length; row++) {
+                    html += '<tr>';
+                    
+                    for (let col = 0; col < headers.length; col++) {
+                        // 使用原始格式的数据
+                        const value = originalFormats[col] ? originalFormats[col][row] : (tableData[row][col] || '');
+                        const setting = columnSettings[col];
+                        const textAlignClass = columnTypes[col] === 'numeric' ? 'text-right' : 'text-left';
+                        
+                        html += `<td class="${textAlignClass}" style="position: relative;">`;
+                        
+                        if (setting && setting.type !== 'none') {
+                            if (setting.type === 'rounded-bg') {
+                                // 圆角背景使用HTML背景色方式实现
+                                html += `<span class="rounded-bg-cell" style="background-color: ${setting.color}30;">${value}</span>`;
+                            } else if (setting.type === 'heat') {
+                                // 热力图 - 整个单元格背景色，根据数据值变化
+                                const heatIntensity = getHeatIntensity(value, col);
+                                html += `<div class="heat-cell" style="background-color: ${setting.color}${Math.floor(heatIntensity * 100).toString(16).padStart(2, '0')};"></div>`;
+                                html += `<span class="heat-text">${value}</span>`;
+                            } else {
+                                // 其他SVG类型使用两端对齐布局
+                                html += '<div class="cell-content">';
+                                html += generateSVG(setting.type, value, col, row, setting.color);
+                                html += `<span>${value}</span>`;
+                                html += '</div>';
+                            }
+                        } else {
+                            html += value;
+                        }
+                        
+                        html += '</td>';
+                    }
+                    
+                    html += '</tr>';
+                }
+                
+                html += '</tbody></table>';
+                
+                tablePreview.innerHTML = html;
+                
+                // 添加排序事件监听器
+                const thElements = tablePreview.querySelectorAll('th');
+                thElements.forEach(th => {
+                    th.addEventListener('click', function() {
+                        const colIndex = parseInt(this.getAttribute('data-index'));
+                        sortColumn(colIndex);
+                    });
+                });
+            }
+            
+            // 获取热力图强度
+            function getHeatIntensity(value, col) {
+                const columnValues = [];
+                for (let r = 1; r < tableData.length; r++) {
+                    if (tableData[r][col] !== undefined) {
+                        const cleanValue = cleanFormattedNumber(tableData[r][col]);
+                        columnValues.push(parseFloat(cleanValue) || 0);
+                    }
+                }
+                
+                const max = Math.max(...columnValues);
+                const min = Math.min(...columnValues);
+                
+                // 以0为基准进行标准化
+                const cleanCurrentValue = cleanFormattedNumber(value);
+                const currentValue = parseFloat(cleanCurrentValue) || 0;
+                
+                // 处理负值情况
+                if (min < 0) {
+                    // 对于包含负数的列，使用对称标准化
+                    const absMax = Math.max(Math.abs(max), Math.abs(min));
+                    return (currentValue + absMax) / (2 * absMax);
+                } else {
+                    // 对于只有正数的列，使用0-max标准化
+                    return max === 0 ? 0 : Math.max(0, Math.min(1, currentValue / max));
+                }
+            }
+            
+            // 对列进行排序
+            function sortColumn(colIndex) {
+                if (tableData.length < 2) return;
+                
+                // 切换排序状态
+                if (sortState[colIndex].sorted) {
+                    sortState[colIndex].ascending = !sortState[colIndex].ascending;
+                } else {
+                    // 重置其他列的排序状态
+                    Object.keys(sortState).forEach(key => {
+                        sortState[key].sorted = false;
+                    });
+                    sortState[colIndex].sorted = true;
+                    sortState[colIndex].ascending = true;
+                }
+                
+                // 对数据进行排序（跳过表头）
+                const dataToSort = tableData.slice(1);
+                const originalDataToSort = [];
+                
+                // 创建原始数据的副本用于排序
+                for (let i = 1; i < tableData.length; i++) {
+                    originalDataToSort.push([...tableData[i]]);
+                }
+                
+                dataToSort.sort((a, b) => {
+                    let valA = a[colIndex];
+                    let valB = b[colIndex];
+                    
+                    // 处理空值
+                    if (valA === undefined || valA === '') valA = columnTypes[colIndex] === 'numeric' ? -Infinity : '';
+                    if (valB === undefined || valB === '') valB = columnTypes[colIndex] === 'numeric' ? -Infinity : '';
+                    
+                    // 数值列按数值比较，文本列按字符串比较
+                    if (columnTypes[colIndex] === 'numeric') {
+                        // 清理格式化的数字
+                        valA = parseFloat(cleanFormattedNumber(valA)) || 0;
+                        valB = parseFloat(cleanFormattedNumber(valB)) || 0;
+                    } else {
+                        valA = String(valA).toLowerCase();
+                        valB = String(valB).toLowerCase();
+                    }
+                    
+                    if (valA < valB) return sortState[colIndex].ascending ? -1 : 1;
+                    if (valA > valB) return sortState[colIndex].ascending ? 1 : -1;
+                    return 0;
+                });
+                
+                // 重新构建表格数据（表头 + 排序后的数据）
+                tableData = [tableData[0], ...dataToSort];
+                
+                // 更新原始格式数据
+                const newOriginalFormats = [];
+                for (let col = 0; col < originalFormats.length; col++) {
+                    const newColumnFormats = [originalFormats[col][0]]; // 保留表头
+                    
+                    // 根据排序后的顺序重新排列原始数据
+                    for (let i = 0; i < dataToSort.length; i++) {
+                        const originalIndex = originalDataToSort.findIndex(row => 
+                            row.join('|') === dataToSort[i].join('|')
+                        );
+                        
+                        if (originalIndex !== -1) {
+                            newColumnFormats.push(originalFormats[col][originalIndex + 1]);
+                        } else {
+                            newColumnFormats.push(dataToSort[i][col] || '');
+                        }
+                    }
+                    
+                    newOriginalFormats.push(newColumnFormats);
+                }
+                
+                originalFormats = newOriginalFormats;
+                
+                // 重新生成预览
+                generatePreview();
+            }
+            
+            // 清理格式化的数字（移除千分位符和百分号）
+            function cleanFormattedNumber(value) {
+                if (typeof value !== 'string') return value;
+                return value.replace(/,/g, '').replace(/%/g, '');
+            }
+            
+            // 生成SVG
+            function generateSVG(type, value, col, row, color) {
+                // 计算列中数据的排名
+                function getRank() {
+                    const columnValues = [];
+                    for (let r = 1; r < tableData.length; r++) {
+                        if (tableData[r][col] !== undefined) {
+                            const cleanValue = cleanFormattedNumber(tableData[r][col]);
+                            columnValues.push(parseFloat(cleanValue) || 0);
+                        }
+                    }
+                    
+                    // 排序获取排名
+                    const sorted = [...columnValues].sort((a, b) => b - a);
+                    const cleanCurrentValue = cleanFormattedNumber(value);
+                    return sorted.indexOf(parseFloat(cleanCurrentValue) || 0) + 1;
+                }
+                
+                // 将值标准化到0-1范围（以0为基准）
+                function normalizeValue() {
+                    const columnValues = [];
+                    for (let r = 1; r < tableData.length; r++) {
+                        if (tableData[r][col] !== undefined) {
+                            const cleanValue = cleanFormattedNumber(tableData[r][col]);
+                            columnValues.push(parseFloat(cleanValue) || 0);
+                        }
+                    }
+                    
+                    const max = Math.max(...columnValues);
+                    const min = Math.min(...columnValues);
+                    
+                    // 以0为基准进行标准化
+                    const cleanCurrentValue = cleanFormattedNumber(value);
+                    const currentValue = parseFloat(cleanCurrentValue) || 0;
+                    
+                    // 处理负值情况
+                    if (min < 0) {
+                        // 对于包含负数的列，使用对称标准化
+                        const absMax = Math.max(Math.abs(max), Math.abs(min));
+                        return (currentValue + absMax) / (2 * absMax);
+                    } else {
+                        // 对于只有正数的列，使用0-max标准化
+                        return max === 0 ? 0 : Math.max(0, Math.min(1, currentValue / max));
+                    }
+                }
+                
+                // 获取列的最小值和最大值（用于条形图的正负显示）
+                function getMinMaxValues() {
+                    const columnValues = [];
+                    for (let r = 1; r < tableData.length; r++) {
+                        if (tableData[r][col] !== undefined) {
+                            const cleanValue = cleanFormattedNumber(tableData[r][col]);
+                            columnValues.push(parseFloat(cleanValue) || 0);
+                        }
+                    }
+                    
+                    const max = Math.max(...columnValues);
+                    const min = Math.min(...columnValues);
+                    
+                    return { min, max };
+                }
+                
+                const normalizedValue = normalizeValue();
+                const { min, max } = getMinMaxValues();
+                const hasNegative = min < 0;
+                
+                switch(type) {
+                    case 'ranking':
+                        const rank = getRank();
+                        return `
+                            <div class="svg-container">
+                                <svg width="24" height="24" viewBox="0 0 24 24">
+                                    <rect width="24" height="24" rx="6" fill="${color}" />
+                                    <text x="12" y="16" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${rank}</text>
+                                </svg>
+                            </div>
+                        `;
+                        
+                    case 'progress':
+                        // 进度条 - 只支持非负数
+                        return `
+                            <div class="svg-container">
+                                <svg width="80" height="32" viewBox="0 0 100 32">
+                                    <rect y='4' width="100" height="24" rx="4" fill="#e0e0e0" />
+                                    <rect y='4' width="${normalizedValue * 100}" height="24" rx="4" fill="${color}" />
+                                </svg>
+                            </div>
+                        `;
+                        
+                    case 'bar':
+                        // 条形图 - 支持正负数
+                        const cleanCurrentValue = cleanFormattedNumber(value);
+                        const currentValue = parseFloat(cleanCurrentValue) || 0;
+                        
+                        let barWidth, barX;
+                        
+                        if (hasNegative) {
+                            // 对于包含负数的列，使用对称条形图
+                            const absMax = Math.max(Math.abs(max), Math.abs(min));
+                            barWidth = Math.abs(currentValue) / absMax * 40; // 最大宽度为40
+                            barX = currentValue >= 0 ? 50 : 50 - barWidth;
+                        } else {
+                            // 对于只有正数的列，使用常规条形图
+                            barWidth = normalizedValue * 80;
+                            barX = 10;
+                        }
+                        
+                        return `
+                            <div class="svg-container">
+                                <svg width="80" height="32" viewBox="0 0 100 32">
+                                    ${hasNegative ? '<line x1="50" y1="0" x2="50" y2="32" stroke="#e0e0e0" stroke-width="1" />' : ''}
+                                    <rect x="${barX}" y="4" width="${barWidth}" height="24" rx="4" fill="${color}" />
+                                </svg>
+                            </div>
+                        `;
+                        
+                    case 'donut':
+                        // 环形图 - 只支持非负数
+                        const radius = 8;
+                        const circumference = 2 * Math.PI * radius;
+                        const strokeDasharray = `${normalizedValue * circumference} ${circumference}`;
+                        return `
+                            <div class="svg-container">
+                                <svg width="24" height="24" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="${radius}" stroke="#e0e0e0" stroke-width="2" fill="none" />
+                                    <circle cx="12" cy="12" r="${radius}" stroke="${color}" stroke-width="2" fill="none" 
+                                            stroke-dasharray="${strokeDasharray}" transform="rotate(-90 12 12)" />
+                                </svg>
+                            </div>
+                        `;
+                        
+                    default:
+                        return '';
+                }
+            }
+            
+            // 导出为PNG
+            exportBtn.addEventListener('click', function() {
+                html2canvas(tablePreview, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = '加载SVG的表格.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片批量转Base64编码工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7f9;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #2c3e50, #1a2530);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            padding: 30px;
+        }
+        
+        .upload-section {
+            border: 2px dashed #d1d8e0;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            background-color: #f9fafb;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            border-color: #3498db;
+            background-color: #f0f7ff;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            margin-bottom: 20px;
+            color: #555;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.2);
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(52, 152, 219, 0.3);
+        }
+        
+        .file-status {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #edf2f7;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .convert-btn, .download-btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .convert-btn {
+            background: linear-gradient(135deg, #27ae60, #219653);
+            color: white;
+            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.2);
+        }
+        
+        .convert-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(39, 174, 96, 0.3);
+        }
+        
+        .convert-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            box-shadow: 0 4px 8px rgba(155, 89, 182, 0.2);
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(155, 89, 182, 0.3);
+        }
+        
+        .download-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .results-section {
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .results-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .results-info {
+            font-size: 16px;
+            color: #555;
+            padding: 15px;
+            background-color: #edf2f7;
+            border-radius: 6px;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background-color: #e1e4e8;
+            border-radius: 3px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        footer {
+            background: linear-gradient(135deg, #2c3e50, #1a2530);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+        }
+        
+        .footer-link {
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .footer-link:hover {
+            color: #5dade2;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 5px;
+            background-color: #2ecc71;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background-color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>图片批量转Base64编码工具</h1>
+            <p class="subtitle">导入图片，转换为Base64编码，并导出为CSV文件，与Power BI适配</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="upload-section" id="drop-area">
+                <div class="upload-icon">📁</div>
+                <p class="upload-text">拖放图片到这里或点击下方按钮导入</p>
+                <p class="upload-text" style="font-size: 14px; margin-top: -10px;">支持PNG, JPG, JPEG, GIF, WEBP格式</p>
+                <input type="file" id="file-input" class="file-input" multiple accept="image/*">
+                <button class="upload-btn" onclick="document.getElementById('file-input').click()">选择图片</button>
+            </div>
+            
+            <div class="file-status" id="file-status">
+                等待导入文件...
+            </div>
+            
+            <div class="action-buttons">
+                <button class="convert-btn" id="convert-btn" disabled>转换为Base64</button>
+                <button class="download-btn" id="download-btn" disabled>下载CSV文件</button>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress" id="progress-bar"></div>
+            </div>
+            
+            <div class="results-section">
+                <h2 class="results-title">转换结果</h2>
+                <div class="results-info" id="results-info">
+                    等待转换...
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p><span class="footer-link" id="footer-link">wujunmin出品</span></p>
+        </footer>
+    </div>
+    
+    <div class="notification" id="notification">操作成功！</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('file-input');
+            const dropArea = document.getElementById('drop-area');
+            const fileStatus = document.getElementById('file-status');
+            const convertBtn = document.getElementById('convert-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const resultsInfo = document.getElementById('results-info');
+            const progressBar = document.getElementById('progress-bar');
+            const notification = document.getElementById('notification');
+            const footerLink = document.getElementById('footer-link');
+            
+            let uploadedFiles = [];
+            let convertedResults = [];
+            
+            // 设置页脚链接
+            footerLink.addEventListener('click', function() {
+                window.open('https://junminwu.github.io/', '_blank');
+            });
+            
+            // 拖放功能
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.style.borderColor = '#3498db';
+                dropArea.style.backgroundColor = '#e3f2fd';
+            }
+            
+            function unhighlight() {
+                dropArea.style.borderColor = '#d1d8e0';
+                dropArea.style.backgroundColor = '#f9fafb';
+            }
+            
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            }
+            
+            fileInput.addEventListener('change', function() {
+                handleFiles(this.files);
+            });
+            
+            function handleFiles(files) {
+                const imageFiles = [];
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.type.match('image.*')) {
+                        imageFiles.push(file);
+                    }
+                }
+                
+                if (imageFiles.length === 0) {
+                    showNotification('请选择图片文件！', 'error');
+                    return;
+                }
+                
+                uploadedFiles = imageFiles;
+                updateFileStatus();
+                convertBtn.disabled = false;
+                
+                showNotification(`成功添加 ${imageFiles.length} 个图片文件`);
+            }
+            
+            function updateFileStatus() {
+                if (uploadedFiles.length === 0) {
+                    fileStatus.textContent = "等待导入文件...";
+                    return;
+                }
+                
+                fileStatus.textContent = `您已导入 ${uploadedFiles.length} 个文件，请点击转换按钮开始转换`;
+            }
+            
+            // 转换功能
+            convertBtn.addEventListener('click', function() {
+                if (uploadedFiles.length === 0) {
+                    showNotification('请先导入图片！', 'error');
+                    return;
+                }
+                
+                convertedResults = [];
+                let completed = 0;
+                
+                progressBar.style.width = '0%';
+                resultsInfo.textContent = '转换中...';
+                convertBtn.disabled = true;
+                downloadBtn.disabled = true;
+                
+                // 处理每个文件
+                uploadedFiles.forEach((file, index) => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.onload = function() {
+                            let canvas = document.createElement('canvas');
+                            let ctx = canvas.getContext('2d');
+                            
+                            // 设置canvas尺寸
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            
+                            // 绘制图像
+                            ctx.drawImage(img, 0, 0);
+                            
+                            // 获取Base64编码
+                            let base64;
+                            let quality = 0.9;
+                            
+                            if (file.type === 'image/png') {
+                                // 对于PNG图片，使用PNG格式保持透明度
+                                base64 = canvas.toDataURL('image/png');
+                                
+                                // 如果base64编码超过30000字符，调整图片尺寸
+                                while (base64.length > 30000 && quality > 0.1) {
+                                    // 按比例缩小图片尺寸
+                                    const scaleFactor = 0.9;
+                                    canvas.width = Math.floor(canvas.width * scaleFactor);
+                                    canvas.height = Math.floor(canvas.height * scaleFactor);
+                                    
+                                    const ctx = canvas.getContext('2d');
+                                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                    
+                                    base64 = canvas.toDataURL('image/png');
+                                    quality -= 0.1;
+                                }
+                            } else {
+                                // 对于其他格式，使用JPEG格式但设置质量
+                                base64 = canvas.toDataURL('image/jpeg', quality);
+                                
+                                // 如果base64编码超过30000字符，调整图片质量和尺寸
+                                while (base64.length > 30000 && quality > 0.1) {
+                                    quality -= 0.1;
+                                    
+                                    // 如果质量已经很低但尺寸仍然很大，调整尺寸
+                                    if (quality < 0.5 && base64.length > 30000) {
+                                        const scaleFactor = 0.9;
+                                        canvas.width = Math.floor(canvas.width * scaleFactor);
+                                        canvas.height = Math.floor(canvas.height * scaleFactor);
+                                    }
+                                    
+                                    const ctx = canvas.getContext('2d');
+                                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                    
+                                    base64 = canvas.toDataURL('image/jpeg', quality);
+                                }
+                            }
+                            
+                            // 如果仍然超过30000字符，强制缩小尺寸
+                            if (base64.length > 30000) {
+                                const scaleFactor = Math.sqrt(30000 / base64.length);
+                                canvas.width = Math.floor(canvas.width * scaleFactor);
+                                canvas.height = Math.floor(canvas.height * scaleFactor);
+                                
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                
+                                if (file.type === 'image/png') {
+                                    base64 = canvas.toDataURL('image/png');
+                                } else {
+                                    base64 = canvas.toDataURL('image/jpeg', 0.7);
+                                }
+                            }
+                            
+                            // 移除文件扩展名
+                            const fileName = file.name.replace(/\.[^/.]+$/, "");
+                            
+                            convertedResults.push({
+                                filename: fileName,
+                                base64: base64
+                            });
+                            
+                            completed++;
+                            progressBar.style.width = `${(completed / uploadedFiles.length) * 100}%`;
+                            
+                            if (completed === uploadedFiles.length) {
+                                resultsInfo.textContent = `成功转换 ${completed} 个文件，请点击上方的下载按钮获取结果`;
+                                downloadBtn.disabled = false;
+                                showNotification('转换完成！');
+                            }
+                        };
+                        
+                        img.src = e.target.result;
+                    };
+                    
+                    reader.readAsDataURL(file);
+                });
+            });
+            
+            // 下载功能
+            downloadBtn.addEventListener('click', function() {
+                if (convertedResults.length === 0) {
+                    showNotification('请先转换图片！', 'error');
+                    return;
+                }
+                
+  
+                const BOM = "\uFEFF";
+                let csvContent = BOM + "文件名,Base64编码\n";
+                
+                convertedResults.forEach(result => {
+                    csvContent += `"${result.filename}","${result.base64}"\n`;
+                });
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                const date = new Date().toISOString().slice(0, 10);
+                
+                link.setAttribute("href", url);
+                link.setAttribute("download", `base64_images_${date}.csv`);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showNotification('CSV文件已生成并开始下载！');
+            });
+            
+            function showNotification(message, type = 'success') {
+                notification.textContent = message;
+                notification.className = type === 'success' ? 'notification show' : 'notification show error';
+                
+                setTimeout(() => {
+                    notification.className = 'notification';
+                }, 3000);
+            }
+            
+            // 初始化状态
+            updateFileStatus();
+        });
+    </script>
+</body>
+</html>

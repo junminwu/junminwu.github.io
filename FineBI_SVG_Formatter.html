@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FineBI SVG 格式化工具 | wujunmin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 25px 30px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 15px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .input-section, .output-section {
+            margin-bottom: 25px;
+        }
+        
+        h2 {
+            font-size: 18px;
+            color: #2a5298;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 180px;
+            padding: 15px;
+            border: 1px solid #d1d9e6;
+            border-radius: 6px;
+            resize: vertical;
+            font-family: 'Arial', 'Monaco', monospace;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.1);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .copy-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .copy-btn:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
+        }
+        
+        .reset-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .reset-btn:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(108, 117, 125, 0.2);
+        }
+        
+        .output-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            min-height: 180px;
+            font-family: 'Arial', 'Monaco', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+            margin-top: 20px;
+        }
+        
+        footer a {
+            color: #2a5298;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background-color: #28a745;
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FineBI SVG 格式化工具</h1>
+            <p class="subtitle">将普通SVG代码、Power BI SVG度量值与FineBI适配</p>
+        </header>
+        
+        <div class="content">
+            <div class="input-section">
+                <h2>输入原始代码</h2>
+                <textarea id="inputCode" placeholder="请在此处粘贴您的代码..."></textarea>
+                <div class="button-group">
+                    <button class="reset-btn" id="resetBtn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
+                        重置
+                    </button>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <h2>适配FineBI格式的代码</h2>
+                <div class="output-box" id="outputCode">处理后的代码将显示在这里...</div>
+                <div class="button-group">
+                    <button class="copy-btn" id="copyBtn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        </svg>
+                        复制代码
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p><a href="https://junminwu.github.io/" target="_blank">wujunmin</a></p>
+        </footer>
+    </div>
+    
+    <div class="notification" id="notification">代码已成功复制到剪贴板！</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputCode = document.getElementById('inputCode');
+            const outputCode = document.getElementById('outputCode');
+            const copyBtn = document.getElementById('copyBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const notification = document.getElementById('notification');
+            
+            // 处理代码函数
+            function processCode() {
+                let code = inputCode.value;
+                
+                if (!code.trim()) {
+                    outputCode.textContent = '处理后的代码将显示在这里...';
+                    return;
+                }
+                
+                // 1. 将代码中的所有"&"符号替换为"+"号
+                code = code.replace(/&/g, '+');
+                
+                // 2. 去除代码中的所有换行
+                code = code.replace(/\n/g, '');
+                
+                outputCode.textContent = code;
+            }
+            
+            // 复制代码函数
+            function copyToClipboard() {
+                const text = outputCode.textContent;
+                
+                if (text === '处理后的代码将显示在这里...' || !text.trim()) {
+                    return;
+                }
+                
+                // 使用现代剪贴板API
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showNotification();
+                    }).catch(err => {
+                        console.error('复制失败: ', err);
+                        fallbackCopyText(text);
+                    });
+                } else {
+                    // 降级方案
+                    fallbackCopyText(text);
+                }
+            }
+            
+            // 降级复制方案
+            function fallbackCopyText(text) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.opacity = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showNotification();
+                    }
+                } catch (err) {
+                    console.error('降级复制失败: ', err);
+                }
+                
+                document.body.removeChild(textArea);
+            }
+            
+            // 显示通知
+            function showNotification() {
+                notification.classList.add('show');
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+            
+            // 重置函数
+            function resetAll() {
+                inputCode.value = '';
+                outputCode.textContent = '处理后的代码将显示在这里...';
+            }
+            
+            // 事件监听
+            copyBtn.addEventListener('click', copyToClipboard);
+            resetBtn.addEventListener('click', resetAll);
+            
+            // 添加输入框的实时处理功能
+            inputCode.addEventListener('input', function() {
+                if (this.value.trim() !== '') {
+                    processCode();
+                } else {
+                    outputCode.textContent = '处理后的代码将显示在这里...';
+                }
+            });
+            
+            // 添加示例代码
+            inputCode.value = `SVG.Rank = 
+"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' id='wujunmin' width='96' height='96'>
+
+<rect rx='0' x='0' y='0' width='96' height='96' 
+    fill='rgb(17,120,101)' fill-opacity='0.26'
+    stroke-width='0' stroke='rgb(17,120,101)' stroke-dasharray='none'/>
+<text x='48' y='48' text-anchor='middle' dominant-baseline='central' 
+    font-size='60' font-family='Segoe UI' font-weight='normal' font-style='normal' fill='rgb(0,0,0)'>"& _排名度量值 &"</text>
+</svg>"`;
+            processCode();
+        });
+    </script>
+</body>
+</html>

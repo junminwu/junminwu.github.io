@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>像素风格SVG图标生成器|wujunmin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* 添加自定义图标样式 */
+        .icon {
+            display: inline-block;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .icon-palette::before {
+            content: "🎨";
+        }
+        
+        .icon-brush::before {
+            content: "🖌️";
+        }
+        
+        .icon-eraser::before {
+            content: "🧹";
+        }
+        
+        .icon-grid::before {
+            content: "⬛";
+        }
+        
+        .icon-code::before {
+            content: "</>";
+        }
+        
+        .icon-download::before {
+            content: "⤓";
+        }
+        
+        .icon-check::before {
+            content: "✓";
+        }
+        
+        .icon-layers::before {
+            content: "📄";
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.85;
+            font-weight: 300;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            flex-grow: 1;
+        }
+        
+        .control-panel {
+            padding: 15px 30px;
+            border-bottom: 1px solid #eaeaea;
+            background-color: #f9fafc;
+        }
+        
+        .controls-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        
+        .control-group {
+            background-color: white;
+            border-radius: 8px;
+            padding: 12px 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 1px solid #eaeaea;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .control-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2a5298;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        
+        .control-title .icon {
+            font-size: 1rem;
+        }
+        
+        /* 工具选择按钮样式 */
+        .tool-selection {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .tool-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        
+        .tool-btn.active {
+            background-color: #2a5298;
+            color: white;
+            border-color: #1e3c72;
+        }
+        
+        .tool-btn:hover:not(.active) {
+            background-color: #f0f4ff;
+            border-color: #c0d0f0;
+        }
+        
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .color-input {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .color-input label {
+            font-weight: 500;
+            color: #555;
+            min-width: 35px;
+            font-size: 0.85rem;
+        }
+        
+        input[type="color"] {
+            width: 35px;
+            height: 30px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            background: none;
+        }
+        
+        .rgb-inputs {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        
+        .rgb-input {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .rgb-input label {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 3px;
+            white-space: nowrap;
+        }
+        
+        .rgb-input input {
+            padding: 5px 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .slider-container {
+            margin-top: 10px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .slider-label span {
+            font-weight: 500;
+            color: #555;
+            font-size: 0.85rem;
+        }
+        
+        .slider-value {
+            font-weight: 600;
+            color: #2a5298;
+            font-size: 0.85rem;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            border-radius: 4px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #2a5298;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .grid-size-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        
+        .grid-input {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .grid-input label {
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+        }
+        
+        .grid-input input {
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            width: 100%;
+        }
+        
+        /* 新增：导出选项样式 */
+        .export-options {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        .export-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        
+        .export-option label {
+            font-size: 0.85rem;
+            color: #555;
+            cursor: pointer;
+        }
+        
+        .export-option input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+        
+        .canvas-container {
+            padding: 20px 30px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+        }
+        
+        .canvas-wrapper {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: #f9fafc;
+            border: 1px solid #eaeaea;
+            min-height: 400px;
+        }
+        
+        #pixelCanvas {
+            display: grid;
+            grid-gap: 0;
+            background-color: white;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #ddd;
+            touch-action: none;
+        }
+        
+        .pixel {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        
+        .pixel:hover {
+            border-color: #bbb;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, #2a5298, #1e3c72);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(42, 82, 152, 0.3);
+        }
+        
+        .btn-secondary {
+            background-color: #f0f4ff;
+            color: #2a5298;
+            border: 1px solid #d0d9f0;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e2e8ff;
+            transform: translateY(-2px);
+        }
+        
+        .btn-clear {
+            background-color: #fff5f5;
+            color: #d33;
+            border: 1px solid #ffd0d0;
+        }
+        
+        .btn-clear:hover {
+            background-color: #ffeaea;
+            transform: translateY(-2px);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #f9fafc;
+            border-top: 1px solid #eaeaea;
+            color: #666;
+        }
+        
+        footer a {
+            color: #2a5298;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        
+        footer a:hover {
+            color: #1e3c72;
+            text-decoration: underline;
+        }
+        
+        .current-color-preview {
+            width: 25px;
+            height: 25px;
+            border-radius: 5px;
+            border: 2px solid #ddd;
+            margin-left: 6px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            padding: 12px 20px;
+            background-color: #2a5298;
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        @media (max-width: 1024px) {
+            .controls-grid {
+                flex-wrap: wrap;
+            }
+            
+            .control-group {
+                flex: 1 1 calc(50% - 12px);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .controls-grid {
+                flex-direction: column;
+            }
+            
+            .control-group {
+                width: 100%;
+            }
+            
+            .grid-size-controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 280px;
+                justify-content: center;
+            }
+            
+            body {
+                padding: 10px;
+            }
+            
+            .control-panel {
+                padding: 12px 20px;
+            }
+            
+            .canvas-container {
+                padding: 15px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>像素风格SVG图标生成器</h1>
+            <p class="subtitle">创建自定义像素风格的图画、文字，并导出为SVG格式</p>
+        </header>
+        
+        <div class="main-content">
+            <section class="control-panel">
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <div class="control-title">
+                            <span class="icon icon-palette"></span>
+                            <span>颜色选择</span>
+                            <div class="current-color-preview" id="colorPreview"></div>
+                        </div>
+                        
+                        <div class="tool-selection">
+                            <button class="tool-btn active" id="brushToolBtn">
+                                <span class="icon icon-brush"></span>
+                                <span>画笔</span>
+                            </button>
+                            <button class="tool-btn" id="eraserToolBtn">
+                                <span class="icon icon-eraser"></span>
+                                <span>橡皮擦</span>
+                            </button>
+                        </div>
+                        
+                        <div class="color-picker">
+                            <div class="color-input">
+                                <label>颜色:</label>
+                                <input type="color" id="colorPicker" value="#2a5298">
+                            </div>
+                        </div>
+                        
+                        <div class="rgb-inputs">
+                            <div class="rgb-input">
+                                <label>R</label>
+                                <input type="number" id="redInput" min="0" max="255" value="42">
+                            </div>
+                            <div class="rgb-input">
+                                <label>G</label>
+                                <input type="number" id="greenInput" min="0" max="255" value="82">
+                            </div>
+                            <div class="rgb-input">
+                                <label>B</label>
+                                <input type="number" id="blueInput" min="0" max="255" value="152">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-title">
+                            <span class="icon icon-brush"></span>
+                            <span>笔刷设置</span>
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>笔刷大小</span>
+                                <span class="slider-value" id="brushSizeValue">1×1</span>
+                            </div>
+                            <input type="range" id="brushSize" min="1" max="10" value="1">
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-title">
+                            <span class="icon icon-grid"></span>
+                            <span>画布设置</span>
+                        </div>
+                        
+                        <div class="grid-size-controls">
+                            <div class="grid-input">
+                                <label>行数</label>
+                                <input type="number" id="rowsInput" min="3" max="500" value="16">
+                            </div>
+                            <div class="grid-input">
+                                <label>列数</label>
+                                <input type="number" id="colsInput" min="3" max="500" value="16">
+                            </div>
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>画布缩放</span>
+                                <span class="slider-value" id="zoomValue">100%</span>
+                            </div>
+                            <input type="range" id="zoomSlider" min="10" max="200" value="100">
+                        </div>
+                        
+                        <!-- 新增：导出选项 -->
+                        <div class="export-options">
+                            <div class="control-title">
+                                <span class="icon icon-layers"></span>
+                                <span>导出选项</span>
+                            </div>
+                            <div class="export-option">
+                                <input type="checkbox" id="includeGrid" checked>
+                                <label for="includeGrid">导出时包含背景网格</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="canvas-container">
+                <div class="canvas-wrapper">
+                    <div id="pixelCanvas"></div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-clear" id="clearBtn">
+                        <span class="icon icon-eraser"></span>
+                        <span>清空画布</span>
+                    </button>
+                    <button class="btn btn-secondary" id="copyCodeBtn">
+                        <span class="icon icon-code"></span>
+                        <span>复制Power BI专用SVG代码</span>
+                    </button>
+                    <button class="btn btn-primary" id="downloadBtn">
+                        <span class="icon icon-download"></span>
+                        <span>下载SVG文件</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+        
+        <footer>
+            <p>返回主页: <a href="https://junminwu.github.io/" target="_blank">wujunmin</a></p>
+        </footer>
+    </div>
+    
+    <div class="notification" id="notification">
+        <span class="icon icon-check"></span>
+        <span id="notificationText">操作成功</span>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const pixelCanvas = document.getElementById('pixelCanvas');
+        const colorPicker = document.getElementById('colorPicker');
+        const colorPreview = document.getElementById('colorPreview');
+        const redInput = document.getElementById('redInput');
+        const greenInput = document.getElementById('greenInput');
+        const blueInput = document.getElementById('blueInput');
+        const brushSize = document.getElementById('brushSize');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+        const rowsInput = document.getElementById('rowsInput');
+        const colsInput = document.getElementById('colsInput');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValue = document.getElementById('zoomValue');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyCodeBtn = document.getElementById('copyCodeBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        const includeGridCheckbox = document.getElementById('includeGrid');
+        
+        // 新增工具选择按钮
+        const brushToolBtn = document.getElementById('brushToolBtn');
+        const eraserToolBtn = document.getElementById('eraserToolBtn');
+        
+        // 状态变量
+        let currentColor = '#2a5298';
+        let brushSizeValueInt = 1;
+        let isDrawing = false;
+        let pixelData = [];
+        let rows = 16;
+        let cols = 16;
+        let currentTool = 'brush'; // 'brush' 或 'eraser'
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化颜色预览
+            updateColorPreview();
+            
+            // 初始化画布
+            initializeCanvas();
+            
+            // 设置事件监听器
+            setupEventListeners();
+        });
+        
+        // 初始化画布
+        function initializeCanvas() {
+            rows = parseInt(rowsInput.value);
+            cols = parseInt(colsInput.value);
+            
+            // 验证输入值
+            if (rows < 3) rows = 3;
+            if (rows > 500) rows = 500;
+            if (cols < 3) cols = 3;
+            if (cols > 500) cols = 500;
+            
+            // 更新输入框
+            rowsInput.value = rows;
+            colsInput.value = cols;
+            
+            // 清空画布和像素数据
+            pixelCanvas.innerHTML = '';
+            pixelData = [];
+            
+            // 设置画布网格布局
+            pixelCanvas.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            
+            // 计算像素大小（基于画布大小和缩放比例）
+            const zoom = parseInt(zoomSlider.value) / 100;
+            const maxCanvasSize = 600;
+            const pixelSize = Math.min(maxCanvasSize / Math.max(rows, cols), 30) * zoom;
+            
+            pixelCanvas.style.width = `${pixelSize * cols}px`;
+            pixelCanvas.style.height = `${pixelSize * rows}px`;
+            
+            // 创建像素
+            for (let i = 0; i < rows * cols; i++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'pixel';
+                pixel.dataset.index = i;
+                pixel.dataset.row = Math.floor(i / cols);
+                pixel.dataset.col = i % cols;
+                pixel.style.backgroundColor = 'transparent';
+                
+                // 添加事件监听器
+                pixel.addEventListener('mousedown', startDrawing);
+                pixel.addEventListener('mouseenter', drawPixel);
+                pixel.addEventListener('touchstart', handleTouchStart);
+                pixel.addEventListener('touchmove', handleTouchMove);
+                
+                pixelCanvas.appendChild(pixel);
+                
+                // 初始化像素数据
+                pixelData.push({
+                    row: Math.floor(i / cols),
+                    col: i % cols,
+                    color: null
+                });
+            }
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 颜色选择器
+            colorPicker.addEventListener('input', function() {
+                currentColor = this.value;
+                updateRGBFromHex(currentColor);
+                updateColorPreview();
+            });
+            
+            // RGB输入框
+            redInput.addEventListener('input', updateColorFromRGB);
+            greenInput.addEventListener('input', updateColorFromRGB);
+            blueInput.addEventListener('input', updateColorFromRGB);
+            
+            // 笔刷大小
+            brushSize.addEventListener('input', function() {
+                brushSizeValueInt = parseInt(this.value);
+                // 显示笔刷大小为 N×N 格式
+                brushSizeValue.textContent = `${brushSizeValueInt}×${brushSizeValueInt}`;
+            });
+            
+            // 画布设置
+            rowsInput.addEventListener('change', initializeCanvas);
+            colsInput.addEventListener('change', initializeCanvas);
+            
+            // 缩放滑块
+            zoomSlider.addEventListener('input', function() {
+                const zoom = parseInt(this.value);
+                zoomValue.textContent = `${zoom}%`;
+                initializeCanvas();
+            });
+            
+            // 工具选择按钮
+            brushToolBtn.addEventListener('click', function() {
+                setActiveTool('brush');
+            });
+            
+            eraserToolBtn.addEventListener('click', function() {
+                setActiveTool('eraser');
+            });
+            
+            // 清空按钮
+            clearBtn.addEventListener('click', clearCanvas);
+            
+            // 复制代码按钮
+            copyCodeBtn.addEventListener('click', copySVGCode);
+            
+            // 下载按钮
+            downloadBtn.addEventListener('click', downloadSVG);
+            
+            // 全局鼠标事件
+            document.addEventListener('mouseup', stopDrawing);
+            document.addEventListener('touchend', stopDrawing);
+        }
+        
+        // 设置活动工具
+        function setActiveTool(tool) {
+            currentTool = tool;
+            
+            // 更新按钮样式
+            if (tool === 'brush') {
+                brushToolBtn.classList.add('active');
+                eraserToolBtn.classList.remove('active');
+            } else if (tool === 'eraser') {
+                eraserToolBtn.classList.add('active');
+                brushToolBtn.classList.remove('active');
+            }
+        }
+        
+        // 开始绘制
+        function startDrawing(e) {
+            e.preventDefault();
+            isDrawing = true;
+            drawPixel(e);
+        }
+        
+        // 绘制像素
+        function drawPixel(e) {
+            if (!isDrawing) return;
+            
+            const target = e.type.includes('touch') ? 
+                document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) : 
+                e.target;
+                
+            if (!target || !target.classList.contains('pixel')) return;
+            
+            const index = parseInt(target.dataset.index);
+            const row = parseInt(target.dataset.row);
+            const col = parseInt(target.dataset.col);
+            
+            // 根据笔刷大小绘制/擦除多个像素
+            for (let r = row; r < row + brushSizeValueInt; r++) {
+                for (let c = col; c < col + brushSizeValueInt; c++) {
+                    // 检查边界
+                    if (r >= 0 && r < rows && c >= 0 && c < cols) {
+                        const pixelIndex = r * cols + c;
+                        const pixelElement = pixelCanvas.children[pixelIndex];
+                        
+                        if (currentTool === 'brush') {
+                            // 使用画笔 - 设置颜色
+                            pixelElement.style.backgroundColor = currentColor;
+                            pixelData[pixelIndex].color = currentColor;
+                        } else if (currentTool === 'eraser') {
+                            // 使用橡皮擦 - 清除颜色
+                            pixelElement.style.backgroundColor = 'transparent';
+                            pixelData[pixelIndex].color = null;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 处理触摸开始
+        function handleTouchStart(e) {
+            e.preventDefault();
+            isDrawing = true;
+            drawPixel(e);
+        }
+        
+        // 处理触摸移动
+        function handleTouchMove(e) {
+            e.preventDefault();
+            drawPixel(e);
+        }
+        
+        // 停止绘制
+        function stopDrawing() {
+            isDrawing = false;
+        }
+        
+        // 清空画布
+        function clearCanvas() {
+            for (let i = 0; i < pixelData.length; i++) {
+                pixelCanvas.children[i].style.backgroundColor = 'transparent';
+                pixelData[i].color = null;
+            }
+            
+            showNotification('画布已清空');
+        }
+        
+        // 生成SVG代码
+        function generateSVG(includeGrid = true) {
+            // 计算画布大小（每个像素10个单位）
+            const pixelSize = 10;
+            const svgWidth = cols * pixelSize;
+            const svgHeight = rows * pixelSize;
+            
+            // 创建SVG元素
+            let svgCode = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">\n`;
+            
+            // 如果用户选择包含背景网格，则添加网格背景
+            if (includeGrid) {
+                // 添加背景白色矩形
+                svgCode += `  <rect x="0" y="0" width="${svgWidth}" height="${svgHeight}" fill="white"/>\n`;
+                
+                // 添加网格线
+                svgCode += `  <g stroke="rgb(240, 240, 240)" stroke-width="0.5">\n`;
+                
+                // 垂直线
+                for (let c = 0; c <= cols; c++) {
+                    const x = c * pixelSize;
+                    svgCode += `    <line x1="${x}" y1="0" x2="${x}" y2="${svgHeight}"/>\n`;
+                }
+                
+                // 水平线
+                for (let r = 0; r <= rows; r++) {
+                    const y = r * pixelSize;
+                    svgCode += `    <line x1="0" y1="${y}" x2="${svgWidth}" y2="${y}"/>\n`;
+                }
+                
+                svgCode += `  </g>\n`;
+            }
+            
+            // 添加像素
+            for (let i = 0; i < pixelData.length; i++) {
+                const pixel = pixelData[i];
+                if (pixel.color) {
+                    const x = pixel.col * pixelSize;
+                    const y = pixel.row * pixelSize;
+                    
+                    // 将颜色转换为RGB格式
+                    const rgbColor = hexToRgb(pixel.color);
+                    
+                    svgCode += `  <rect x="${x}" y="${y}" width="${pixelSize}" height="${pixelSize}" fill="rgb(${rgbColor.r}, ${rgbColor.g}, ${rgbColor.b})"/>\n`;
+                }
+            }
+            
+            svgCode += '</svg>';
+            return svgCode;
+        }
+        
+        // 复制SVG代码
+        function copySVGCode() {
+            // 获取用户是否包含背景网格的选择
+            const includeGrid = includeGridCheckbox.checked;
+            
+            // 生成SVG代码
+            const svgCode = generateSVG(includeGrid);
+            
+            // 替换双引号为单引号并添加前缀
+            const codeToCopy = `data:image/svg+xml;utf8,${svgCode.replace(/"/g, "'")}`;
+            
+            // 复制到剪贴板
+            navigator.clipboard.writeText(codeToCopy)
+                .then(() => {
+                    const gridStatus = includeGrid ? '包含' : '不包含';
+                    showNotification(`SVG代码已复制到剪贴板（${gridStatus}背景网格）`);
+                })
+                .catch(err => {
+                    console.error('复制失败: ', err);
+                    showNotification('复制失败，请手动复制代码', true);
+                });
+        }
+        
+        // 下载SVG文件
+        function downloadSVG() {
+            // 获取用户是否包含背景网格的选择
+            const includeGrid = includeGridCheckbox.checked;
+            
+            // 生成SVG代码
+            const svgCode = generateSVG(includeGrid);
+            const blob = new Blob([svgCode], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'pixel-art.svg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            URL.revokeObjectURL(url);
+            
+            const gridStatus = includeGrid ? '包含' : '不包含';
+            showNotification(`SVG文件下载成功（${gridStatus}背景网格）`);
+        }
+        
+        // 更新颜色预览
+        function updateColorPreview() {
+            colorPreview.style.backgroundColor = currentColor;
+            colorPicker.value = currentColor;
+        }
+        
+        // 更新RGB输入框从十六进制颜色
+        function updateRGBFromHex(hex) {
+            const rgb = hexToRgb(hex);
+            redInput.value = rgb.r;
+            greenInput.value = rgb.g;
+            blueInput.value = rgb.b;
+        }
+        
+        // 从RGB输入框更新颜色
+        function updateColorFromRGB() {
+            const r = clamp(parseInt(redInput.value) || 0, 0, 255);
+            const g = clamp(parseInt(greenInput.value) || 0, 0, 255);
+            const b = clamp(parseInt(blueInput.value) || 0, 0, 255);
+            
+            redInput.value = r;
+            greenInput.value = g;
+            blueInput.value = b;
+            
+            currentColor = rgbToHex(r, g, b);
+            updateColorPreview();
+        }
+        
+        // 显示通知
+        function showNotification(message, isError = false) {
+            notificationText.textContent = message;
+            
+            if (isError) {
+                notification.style.backgroundColor = '#e53e3e';
+            } else {
+                notification.style.backgroundColor = '#2a5298';
+            }
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 工具函数：将十六进制颜色转换为RGB对象
+        function hexToRgb(hex) {
+            // 移除#号
+            hex = hex.replace('#', '');
+            
+            // 解析RGB值
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            
+            return { r, g, b };
+        }
+        
+        // 工具函数：将RGB值转换为十六进制颜色
+        function rgbToHex(r, g, b) {
+            return '#' + 
+                r.toString(16).padStart(2, '0') + 
+                g.toString(16).padStart(2, '0') + 
+                b.toString(16).padStart(2, '0');
+        }
+        
+        // 工具函数：限制数值在最小值和最大值之间
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+    </script>
+</body>
+</html>

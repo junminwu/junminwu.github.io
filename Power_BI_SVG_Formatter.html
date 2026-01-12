@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI SVG 代码格式化工具 | wujunmin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            color: #1e293b;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: #64748b;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .input-section, .output-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background-color: #3b82f6;
+            color: white;
+            padding: 18px 25px;
+            font-size: 1.3rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .section-header h2 {
+            font-weight: 500;
+        }
+        
+        .input-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .option-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .option-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .section-body {
+            padding: 25px;
+        }
+        
+        .textarea-container {
+            position: relative;
+            height: 400px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 0.95rem;
+            font-family: monospace;
+            resize: none;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .file-input-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .file-input-label {
+            display: inline-block;
+            background-color: #f1f5f9;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 25px 20px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-input-label:hover {
+            background-color: #e2e8f0;
+            border-color: #94a3b8;
+        }
+        
+        .file-input-label svg {
+            margin-bottom: 10px;
+            opacity: 0.7;
+        }
+        
+        .file-input-label p {
+            margin-bottom: 5px;
+            color: #64748b;
+        }
+        
+        .file-input-label span {
+            color: #3b82f6;
+            font-weight: 500;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .output-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .copy-btn {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 20px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background-color: #0da271;
+        }
+        
+        .copy-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .copy-btn svg {
+            fill: white;
+        }
+        
+        .output-info {
+            font-size: 0.9rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .output-info svg {
+            fill: #64748b;
+        }
+        
+        .conversion-status {
+            background-color: #f8fafc;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .conversion-status.show {
+            display: block;
+        }
+        
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .status-success {
+            color: #10b981;
+        }
+        
+        .status-error {
+            color: #ef4444;
+        }
+        
+        .status-success svg, .status-error svg {
+            fill: currentColor;
+        }
+        
+        .status-details {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+        
+        .color-conversion-info {
+            background-color: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 12px 15px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        footer a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Power BI SVG 代码格式化工具</h1>
+            <p class="subtitle">将SVG代码转换为Power BI兼容格式。支持文件上传或直接粘贴SVG代码，自动执行格式转换和颜色编码标准化。</p>
+        </header>
+        
+        <main class="main-content">
+            <section class="input-section">
+                <div class="section-header">
+                    <h2>输入SVG代码</h2>
+                    <div class="input-options">
+                        <button class="option-btn" id="clear-btn">清空</button>
+                        <button class="option-btn" id="example-btn">示例</button>
+                    </div>
+                </div>
+                <div class="section-body">
+                    <div class="textarea-container">
+                        <textarea id="svg-input" placeholder="在此粘贴SVG代码或使用下方文件导入功能..."></textarea>
+                    </div>
+                    
+                    <div class="file-input-container">
+                        <label for="file-upload" class="file-input-label">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+                                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                                <path d="M8 15.01l1.41 1.41L11 14.84V19h2v-4.16l1.59 1.59L16 15.01 12.01 11z"/>
+                            </svg>
+                            <p>拖放SVG文件到此处或 <span>点击选择文件</span></p>
+                            <p>支持 .svg 文件或直接粘贴代码</p>
+                        </label>
+                        <input type="file" id="file-upload" accept=".svg,image/svg+xml">
+                    </div>
+                </div>
+            </section>
+            
+            <section class="output-section">
+                <div class="section-header">
+                    <h2>Power BI格式输出</h2>
+                </div>
+                <div class="section-body">
+                    <div class="output-controls">
+                        <div class="output-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                            </svg>
+                            <span>转换后的代码可直接用于Power BI内置视觉对象</span>
+                        </div>
+                        <button class="copy-btn" id="copy-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                            复制代码
+                        </button>
+                    </div>
+                    
+                    <div class="textarea-container">
+                        <textarea id="svg-output" readonly placeholder="转换后的Power BI兼容SVG代码将显示在这里..."></textarea>
+                    </div>
+                    
+                    <div class="color-conversion-info">
+                        <strong>颜色转换说明：</strong> 所有颜色值（如十六进制、颜色名称）都将转换为RGB格式，以确保与Power BI兼容。
+                    </div>
+                    
+                    <div class="conversion-status" id="conversion-status">
+                        <div class="status-header">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                            </svg>
+                            <span>转换成功！</span>
+                        </div>
+                        <div class="status-details" id="status-details">
+                            代码已成功转换并复制到剪贴板。
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p><a href="https://junminwu.github.io/" target="_blank">wujunmin</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM元素
+        const svgInput = document.getElementById('svg-input');
+        const svgOutput = document.getElementById('svg-output');
+        const fileUpload = document.getElementById('file-upload');
+        const clearBtn = document.getElementById('clear-btn');
+        const exampleBtn = document.getElementById('example-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const conversionStatus = document.getElementById('conversion-status');
+        const statusDetails = document.getElementById('status-details');
+        
+        // 示例SVG代码
+        const exampleSVG = `<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:rgb(255,0,0);stop-opacity:1" />
+      <stop offset="100%" style="stop-color:rgb(255,255,0);stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect x="10" y="10" width="180" height="180" fill="url(#grad1)" stroke="#333" stroke-width="2"/>
+  <circle cx="100" cy="100" r="60" fill="rgba(0, 150, 255, 0.7)" stroke="blue" stroke-width="3"/>
+  <text x="100" y="120" font-family="Arial" font-size="24" text-anchor="middle" fill="white">Power BI</text>
+  <polygon points="50,180 100,140 150,180" fill="green" stroke="darkgreen" stroke-width="2"/>
+</svg>`;
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置示例按钮点击事件
+            exampleBtn.addEventListener('click', function() {
+                svgInput.value = exampleSVG;
+                convertSVG();
+                showStatus('示例代码已加载并转换完成', 'success');
+            });
+            
+            // 设置清空按钮点击事件
+            clearBtn.addEventListener('click', function() {
+                svgInput.value = '';
+                svgOutput.value = '';
+                hideStatus();
+            });
+            
+            // 设置输入变化监听
+            svgInput.addEventListener('input', convertSVG);
+            
+            // 设置文件上传事件
+            fileUpload.addEventListener('change', handleFileUpload);
+            
+            // 设置拖放文件事件
+            const fileInputLabel = document.querySelector('.file-input-label');
+            fileInputLabel.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.backgroundColor = '#e2e8f0';
+                this.style.borderColor = '#94a3b8';
+            });
+            
+            fileInputLabel.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.backgroundColor = '#f1f5f9';
+                this.style.borderColor = '#cbd5e1';
+            });
+            
+            fileInputLabel.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.backgroundColor = '#f1f5f9';
+                this.style.borderColor = '#cbd5e1';
+                
+                if (e.dataTransfer.files.length) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.type === 'image/svg+xml' || file.name.endsWith('.svg')) {
+                        readSVGFile(file);
+                    } else {
+                        showStatus('请上传SVG文件', 'error');
+                    }
+                }
+            });
+            
+            // 设置复制按钮点击事件
+            copyBtn.addEventListener('click', copyToClipboard);
+        });
+        
+        // 处理文件上传
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                readSVGFile(file);
+            }
+        }
+        
+        // 读取SVG文件
+        function readSVGFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                svgInput.value = e.target.result;
+                convertSVG();
+                showStatus(`文件 "${file.name}" 已加载并转换完成`, 'success');
+            };
+            reader.onerror = function() {
+                showStatus('读取文件时出错', 'error');
+            };
+            reader.readAsText(file);
+        }
+        
+        // 转换SVG代码
+        function convertSVG() {
+            const input = svgInput.value.trim();
+            if (!input) {
+                svgOutput.value = '';
+                hideStatus();
+                return;
+            }
+            
+            try {
+                let result = input;
+                
+                // 1. 将双引号替换为单引号
+                result = result.replace(/"/g, "'");
+                
+                // 2. 添加data:image/svg+xml;utf8,前缀（如果不存在）
+                if (!result.startsWith('data:image/svg+xml;utf8,')) {
+                    result = 'data:image/svg+xml;utf8,' + result;
+                }
+                
+                // 3. 转换颜色编码为RGB格式
+                result = convertColorsToRGB(result);
+                
+                // 4. 格式化代码（添加缩进和换行）
+                result = formatSVGCode(result.replace('data:image/svg+xml;utf8,', ''));
+                result = 'data:image/svg+xml;utf8,' + result;
+                
+                svgOutput.value = result;
+            } catch (error) {
+                svgOutput.value = '转换过程中出现错误：' + error.message;
+                showStatus('转换失败：' + error.message, 'error');
+            }
+        }
+        
+        // 转换颜色为RGB格式
+        function convertColorsToRGB(svgCode) {
+            // 处理十六进制颜色
+            svgCode = svgCode.replace(/#([0-9A-Fa-f]{3,6})\b/g, function(match, hex) {
+                return hexToRGB(hex);
+            });
+            
+            // 处理颜色名称（常见颜色名称映射）
+            const colorNames = {
+                'aliceblue': 'rgb(240, 248, 255)',
+                'antiquewhite': 'rgb(250, 235, 215)',
+                'aqua': 'rgb(0, 255, 255)',
+                'aquamarine': 'rgb(127, 255, 212)',
+                'azure': 'rgb(240, 255, 255)',
+                'beige': 'rgb(245, 245, 220)',
+                'bisque': 'rgb(255, 228, 196)',
+                'black': 'rgb(0, 0, 0)',
+                'blanchedalmond': 'rgb(255, 235, 205)',
+                'blue': 'rgb(0, 0, 255)',
+                'blueviolet': 'rgb(138, 43, 226)',
+                'brown': 'rgb(165, 42, 42)',
+                'burlywood': 'rgb(222, 184, 135)',
+                'cadetblue': 'rgb(95, 158, 160)',
+                'chartreuse': 'rgb(127, 255, 0)',
+                'chocolate': 'rgb(210, 105, 30)',
+                'coral': 'rgb(255, 127, 80)',
+                'cornflowerblue': 'rgb(100, 149, 237)',
+                'cornsilk': 'rgb(255, 248, 220)',
+                'crimson': 'rgb(220, 20, 60)',
+                'cyan': 'rgb(0, 255, 255)',
+                'darkblue': 'rgb(0, 0, 139)',
+                'darkcyan': 'rgb(0, 139, 139)',
+                'darkgoldenrod': 'rgb(184, 134, 11)',
+                'darkgray': 'rgb(169, 169, 169)',
+                'darkgreen': 'rgb(0, 100, 0)',
+                'darkgrey': 'rgb(169, 169, 169)',
+                'darkkhaki': 'rgb(189, 183, 107)',
+                'darkmagenta': 'rgb(139, 0, 139)',
+                'darkolivegreen': 'rgb(85, 107, 47)',
+                'darkorange': 'rgb(255, 140, 0)',
+                'darkorchid': 'rgb(153, 50, 204)',
+                'darkred': 'rgb(139, 0, 0)',
+                'darksalmon': 'rgb(233, 150, 122)',
+                'darkseagreen': 'rgb(143, 188, 143)',
+                'darkslateblue': 'rgb(72, 61, 139)',
+                'darkslategray': 'rgb(47, 79, 79)',
+                'darkslategrey': 'rgb(47, 79, 79)',
+                'darkturquoise': 'rgb(0, 206, 209)',
+                'darkviolet': 'rgb(148, 0, 211)',
+                'deeppink': 'rgb(255, 20, 147)',
+                'deepskyblue': 'rgb(0, 191, 255)',
+                'dimgray': 'rgb(105, 105, 105)',
+                'dimgrey': 'rgb(105, 105, 105)',
+                'dodgerblue': 'rgb(30, 144, 255)',
+                'firebrick': 'rgb(178, 34, 34)',
+                'floralwhite': 'rgb(255, 250, 240)',
+                'forestgreen': 'rgb(34, 139, 34)',
+                'fuchsia': 'rgb(255, 0, 255)',
+                'gainsboro': 'rgb(220, 220, 220)',
+                'ghostwhite': 'rgb(248, 248, 255)',
+                'gold': 'rgb(255, 215, 0)',
+                'goldenrod': 'rgb(218, 165, 32)',
+                'gray': 'rgb(128, 128, 128)',
+                'green': 'rgb(0, 128, 0)',
+                'greenyellow': 'rgb(173, 255, 47)',
+                'grey': 'rgb(128, 128, 128)',
+                'honeydew': 'rgb(240, 255, 240)',
+                'hotpink': 'rgb(255, 105, 180)',
+                'indianred': 'rgb(205, 92, 92)',
+                'indigo': 'rgb(75, 0, 130)',
+                'ivory': 'rgb(255, 255, 240)',
+                'khaki': 'rgb(240, 230, 140)',
+                'lavender': 'rgb(230, 230, 250)',
+                'lavenderblush': 'rgb(255, 240, 245)',
+                'lawngreen': 'rgb(124, 252, 0)',
+                'lemonchiffon': 'rgb(255, 250, 205)',
+                'lightblue': 'rgb(173, 216, 230)',
+                'lightcoral': 'rgb(240, 128, 128)',
+                'lightcyan': 'rgb(224, 255, 255)',
+                'lightgoldenrodyellow': 'rgb(250, 250, 210)',
+                'lightgray': 'rgb(211, 211, 211)',
+                'lightgreen': 'rgb(144, 238, 144)',
+                'lightgrey': 'rgb(211, 211, 211)',
+                'lightpink': 'rgb(255, 182, 193)',
+                'lightsalmon': 'rgb(255, 160, 122)',
+                'lightseagreen': 'rgb(32, 178, 170)',
+                'lightskyblue': 'rgb(135, 206, 250)',
+                'lightslategray': 'rgb(119, 136, 153)',
+                'lightslategrey': 'rgb(119, 136, 153)',
+                'lightsteelblue': 'rgb(176, 196, 222)',
+                'lightyellow': 'rgb(255, 255, 224)',
+                'lime': 'rgb(0, 255, 0)',
+                'limegreen': 'rgb(50, 205, 50)',
+                'linen': 'rgb(250, 240, 230)',
+                'magenta': 'rgb(255, 0, 255)',
+                'maroon': 'rgb(128, 0, 0)',
+                'mediumaquamarine': 'rgb(102, 205, 170)',
+                'mediumblue': 'rgb(0, 0, 205)',
+                'mediumorchid': 'rgb(186, 85, 211)',
+                'mediumpurple': 'rgb(147, 112, 219)',
+                'mediumseagreen': 'rgb(60, 179, 113)',
+                'mediumslateblue': 'rgb(123, 104, 238)',
+                'mediumspringgreen': 'rgb(0, 250, 154)',
+                'mediumturquoise': 'rgb(72, 209, 204)',
+                'mediumvioletred': 'rgb(199, 21, 133)',
+                'midnightblue': 'rgb(25, 25, 112)',
+                'mintcream': 'rgb(245, 255, 250)',
+                'mistyrose': 'rgb(255, 228, 225)',
+                'moccasin': 'rgb(255, 228, 181)',
+                'navajowhite': 'rgb(255, 222, 173)',
+                'navy': 'rgb(0, 0, 128)',
+                'oldlace': 'rgb(253, 245, 230)',
+                'olive': 'rgb(128, 128, 0)',
+                'olivedrab': 'rgb(107, 142, 35)',
+                'orange': 'rgb(255, 165, 0)',
+                'orangered': 'rgb(255, 69, 0)',
+                'orchid': 'rgb(218, 112, 214)',
+                'palegoldenrod': 'rgb(238, 232, 170)',
+                'palegreen': 'rgb(152, 251, 152)',
+                'paleturquoise': 'rgb(175, 238, 238)',
+                'palevioletred': 'rgb(219, 112, 147)',
+                'papayawhip': 'rgb(255, 239, 213)',
+                'peachpuff': 'rgb(255, 218, 185)',
+                'peru': 'rgb(205, 133, 63)',
+                'pink': 'rgb(255, 192, 203)',
+                'plum': 'rgb(221, 160, 221)',
+                'powderblue': 'rgb(176, 224, 230)',
+                'purple': 'rgb(128, 0, 128)',
+                'red': 'rgb(255, 0, 0)',
+                'rosybrown': 'rgb(188, 143, 143)',
+                'royalblue': 'rgb(65, 105, 225)',
+                'saddlebrown': 'rgb(139, 69, 19)',
+                'salmon': 'rgb(250, 128, 114)',
+                'sandybrown': 'rgb(244, 164, 96)',
+                'seagreen': 'rgb(46, 139, 87)',
+                'seashell': 'rgb(255, 245, 238)',
+                'sienna': 'rgb(160, 82, 45)',
+                'silver': 'rgb(192, 192, 192)',
+                'skyblue': 'rgb(135, 206, 235)',
+                'slateblue': 'rgb(106, 90, 205)',
+                'slategray': 'rgb(112, 128, 144)',
+                'slategrey': 'rgb(112, 128, 144)',
+                'snow': 'rgb(255, 250, 250)',
+                'springgreen': 'rgb(0, 255, 127)',
+                'steelblue': 'rgb(70, 130, 180)',
+                'tan': 'rgb(210, 180, 140)',
+                'teal': 'rgb(0, 128, 128)',
+                'thistle': 'rgb(216, 191, 216)',
+                'tomato': 'rgb(255, 99, 71)',
+                'turquoise': 'rgb(64, 224, 208)',
+                'violet': 'rgb(238, 130, 238)',
+                'wheat': 'rgb(245, 222, 179)',
+                'white': 'rgb(255, 255, 255)',
+                'whitesmoke': 'rgb(245, 245, 245)',
+                'yellow': 'rgb(255, 255, 0)',
+                'yellowgreen': 'rgb(154, 205, 50)'
+            };
+            
+            // 替换颜色名称
+            for (const [name, rgb] of Object.entries(colorNames)) {
+                const regex = new RegExp(`\\b${name}\\b`, 'gi');
+                svgCode = svgCode.replace(regex, rgb);
+            }
+            
+            return svgCode;
+        }
+        
+        // 十六进制转RGB
+        function hexToRGB(hex) {
+            // 处理3位十六进制
+            if (hex.length === 3) {
+                hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+            }
+            
+            // 转换为十进制
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+        
+  // 格式化SVG代码（添加缩进）
+function formatSVGCode(svgCode) {
+    // 简化方法：通过正则表达式分割和重组
+    let result = '';
+    let indentLevel = 0;
+    
+    // 添加换行来分割标签
+    const formatted = svgCode
+        .replace(/>/g, '>\n')
+        .replace(/</g, '\n<')
+        .replace(/\n\n/g, '\n')
+        .trim();
+    
+    const lines = formatted.split('\n');
+    
+    for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+        
+        // 检查是否是结束标签
+        const isEndTag = line.startsWith('</');
+        // 检查是否是自闭合标签
+        const isSelfClosing = line.endsWith('/>') || 
+                             (line.includes('<') && line.includes('?') && line.includes('?>')) ||
+                             (line.includes('!--') && line.includes('-->'));
+        // 检查是否是开始标签（非自闭合）
+        const isStartTag = line.startsWith('<') && !isEndTag && !isSelfClosing;
+        
+        // 如果是结束标签，先减少缩进
+        if (isEndTag) {
+            indentLevel = Math.max(0, indentLevel - 1);
+        }
+        
+        // 添加当前行的缩进
+        result += '  '.repeat(indentLevel) + line + '\n';
+        
+        // 如果是开始标签（非自闭合），增加缩进
+        if (isStartTag && !isSelfClosing) {
+            indentLevel++;
+        }
+    }
+    
+    return result;
+}
+        
+        // 复制到剪贴板
+        function copyToClipboard() {
+            if (!svgOutput.value) {
+                showStatus('没有可复制的内容', 'error');
+                return;
+            }
+            
+            svgOutput.select();
+            svgOutput.setSelectionRange(0, 99999); // 移动设备支持
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showStatus('代码已复制到剪贴板', 'success');
+                } else {
+                    showStatus('复制失败，请手动复制', 'error');
+                }
+            } catch (err) {
+                // 使用现代API作为后备
+                navigator.clipboard.writeText(svgOutput.value).then(
+                    function() {
+                        showStatus('代码已复制到剪贴板', 'success');
+                    },
+                    function() {
+                        showStatus('复制失败，请手动复制', 'error');
+                    }
+                );
+            }
+        }
+        
+        // 显示状态消息
+        function showStatus(message, type) {
+            const statusHeader = conversionStatus.querySelector('.status-header');
+            const icon = statusHeader.querySelector('svg');
+            const text = statusHeader.querySelector('span');
+            
+            if (type === 'success') {
+                statusHeader.className = 'status-header status-success';
+                icon.innerHTML = '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>';
+                text.textContent = '转换成功！';
+            } else {
+                statusHeader.className = 'status-header status-error';
+                icon.innerHTML = '<path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>';
+                text.textContent = '错误！';
+            }
+            
+            statusDetails.textContent = message;
+            conversionStatus.classList.add('show');
+            
+            // 3秒后隐藏状态消息（如果是成功消息）
+            if (type === 'success') {
+                setTimeout(hideStatus, 3000);
+            }
+        }
+        
+        // 隐藏状态消息
+        function hideStatus() {
+            conversionStatus.classList.remove('show');
+        }
+    </script>
+</body>
+</html>

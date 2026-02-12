@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG水印生成器 | wujunmin</title>
+    <!-- 引入 fontsource 可商用免费字体 (五种) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto:wght@300;400;500&family=Open+Sans:wght@400;600&family=Montserrat:wght@400;500;600&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f4f7fb;
+            font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            color: #1a2634;
+        }
+
+        /* 商务风卡片容器 */
+        .business-card {
+            max-width: 1360px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 20, 40, 0.06);
+            padding: 36px 40px;
+            border: 1px solid #eaeef5;
+            transition: all 0.2s;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 600;
+            color: #0a2b4a;
+            letter-spacing: -0.01em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #dce3ec;
+            margin: 24px 0 28px 0;
+        }
+
+        /* 两列布局: 预览区 + 控制区 */
+        .generator-panel {
+            display: flex;
+            gap: 36px;
+            flex-wrap: wrap;
+        }
+
+        .preview-area {
+            flex: 1 1 560px;
+            background: #ffffff;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .preview-header span {
+            font-weight: 500;
+            color: #2a4058;
+            font-size: 15px;
+            background: #f2f6fc;
+            padding: 6px 16px;
+            border-radius: 40px;
+        }
+
+        .svg-container {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e6ecf2;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.15s;
+            min-height: 400px;
+            height: 100%;
+            width: 100%;
+        }
+
+        .svg-preview {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.01);
+        }
+
+        /* 控制区域 - 精致商务表单 */
+        .control-area {
+            flex: 0 0 300px;
+            background: #fafcff;
+            border-radius: 20px;
+            padding: 28px 26px;
+            border: 1px solid #e2e9f2;
+        }
+
+        .control-group {
+            margin-bottom: 26px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f3a57;
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+        }
+
+        .control-group label span {
+            color: #54708f;
+            font-weight: 400;
+            font-size: 13px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #cbd6e3;
+            border-radius: 12px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.15s;
+            color: #0a1c2e;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input:focus, select:focus {
+            border-color: #2e6c9c;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(46, 108, 156, 0.08);
+        }
+
+        .double-input {
+            display: flex;
+            gap: 12px;
+        }
+
+        .double-input div {
+            flex: 1;
+        }
+
+        .color-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .color-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .color-item span {
+            font-size: 12px;
+            color: #40657e;
+        }
+
+        input[type="color"] {
+            height: 48px;
+            padding: 6px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* 疏密滑块定制 */
+        .density-slider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            padding: 0;
+            height: 6px;
+            border-radius: 10px;
+            background: #d6e0e9;
+            accent-color: #1f5f8e;
+        }
+
+        .density-value {
+            min-width: 48px;
+            background: #e4ecf3;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            color: #0d3853;
+        }
+
+        /* 动画切换胶囊 - 三种动画 */
+        .animation-toggle {
+            display: flex;
+            background: transparent;
+            border-radius: 0px;
+            padding: 0px;
+            gap: 8px;
+        }
+
+        .anim-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 14px;
+            font-weight: 500;
+            color: #315977;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+.anim-option.active {
+    background: transparent;
+    color: #0e4b74;
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    text-decoration-thickness: 2px;
+    text-decoration-color: #0e4b74;
+}
+
+        .anim-radio {
+            display: none;
+        }
+
+        .btn-download {
+            background: #0a2e4a;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 16px 20px;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.15s;
+            width: 100%;
+            margin-top: 18px;
+            border: 1px solid #264a66;
+            letter-spacing: 0.6px;
+        }
+
+        .btn-download:hover {
+            background: #134569;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(12, 60, 96, 0.12);
+        }
+
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 15px;
+            color: #496277;
+            border-top: 1px solid #d6e2ec;
+            padding-top: 26px;
+            font-weight: 400;
+        }
+
+        footer a {
+            color: #0a3e5c;
+            text-decoration: none;
+            font-weight: 600;
+            border-bottom: 1px dashed #809ab3;
+            padding-bottom: 2px;
+        }
+
+        footer a:hover {
+            color: #021c2b;
+            border-bottom-style: solid;
+        }
+
+        .font-options {
+            font-size: 15px;
+        }
+
+        /* 透明度数值显示 */
+        .opacity-value {
+            min-width: 48px;
+            background: #e4ecf3;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            color: #0d3853;
+        }
+        .opacity-slider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="business-card">
+    <h1>
+        ⚙️ SVG 水印生成器
+    </h1>
+    <!-- 主编辑区 预览+控制 -->
+    <div class="generator-panel">
+        <!-- 左侧 SVG 画布预览 -->
+        <div class="preview-area">
+            <div class="preview-header">
+                <span>📺 实时预览</span>
+                <span id="dimension-indicator">800 x 600</span>
+            </div>
+            <div class="svg-container" id="svgContainer" style="background-color: #f5f7fa;">
+                <!-- SVG 动态渲染到这里 -->
+                <svg id="liveSvg" class="svg-preview" width="800" height="600" xmlns="http://www.w3.org/2000/svg" style="background-color: #ffffff;"></svg>
+            </div>
+        </div>
+
+        <!-- 右侧控制台 商务风密集调节 -->
+        <div class="control-area">
+            <form id="watermarkForm" onsubmit="return false;">
+                <!-- 水印基础文字 -->
+                <div class="control-group">
+                    <label>🖊️ 水印文字</label>
+                    <input type="text" id="watermarkText" value="绝密资料" placeholder="例如: 绝密资料">
+                </div>
+                <!-- 字体选择：5种免费商用 -->
+                <div class="control-group">
+                    <label>🔤 字体</label>
+                    <select id="fontFamily" class="font-options">
+                        <option value="Inter, sans-serif" style="font-family: 'Inter';">Inter</option>
+                        <option value="Roboto, sans-serif" style="font-family: 'Roboto';">Roboto</option>
+                        <option value="Open Sans, sans-serif" style="font-family: 'Open Sans';">Open Sans</option>
+                        <option value="Montserrat, sans-serif" style="font-family: 'Montserrat';">Montserrat</option>
+                        <option value="Lato, sans-serif" style="font-family: 'Lato';">Lato</option>
+                    </select>
+                </div>
+                <!-- 画布长宽 -->
+                <div class="control-group">
+                    <label>📐 画布尺寸 (宽×高) <span>px</span></label>
+                    <div class="double-input">
+                        <div><input type="number" id="canvasWidth" value="800" min="200" max="2000" step="10"></div>
+                        <div><input type="number" id="canvasHeight" value="600" min="200" max="2000" step="10"></div>
+                    </div>
+                </div>
+                <!-- 背景色 & 文本色 -->
+                <div class="control-group">
+                    <label>🎨 背景色 / 文字颜色</label>
+                    <div class="color-row">
+                        <div class="color-item">
+                            <span>画布背景</span>
+                            <input type="color" id="bgColor" value="#ffffff">
+                        </div>
+                        <div class="color-item">
+                            <span>水印颜色</span>
+                            <input type="color" id="textColor" value="#6586a0">
+                        </div>
+                    </div>
+                </div>
+                <!-- 文字大小 -->
+                <div class="control-group">
+                    <label>🔠 文字大小 <span id="fontSizeVal">24px</span></label>
+                    <input type="range" id="fontSize" min="12" max="60" value="24" step="1">
+                </div>
+                <!-- 透明度 -->
+                <div class="control-group">
+                    <label>💧 水印透明度</label>
+                    <div class="opacity-slider">
+                        <input type="range" id="opacityRange" min="0.1" max="1" step="0.05" value="0.65">
+                        <span class="opacity-value" id="opacityValue">0.65</span>
+                    </div>
+                </div>
+                <!-- 旋转角度 -->
+                <div class="control-group">
+                    <label>↩️ 旋转角度 <span id="rotateVal">45°</span></label>
+                    <input type="range" id="rotateAngle" min="-90" max="90" value="45" step="1">
+                </div>
+                <!-- 疏密程度：行列步长控制 -->
+                <div class="control-group">
+                    <label>🌿 疏密程度 <span id="densityLabel">中</span></label>
+                    <div class="density-slider">
+                        <input type="range" id="density" min="40" max="150" value="90" step="5">
+                        <span class="density-value" id="densityValue">90px</span>
+                    </div>
+                </div>
+                <!-- 动画模式：静态 / 淡入呼吸 / 浮动韵律 -->
+                <div class="control-group">
+                    <label>🌀 动画效果</label>
+                    <div class="animation-toggle" id="animToggle">
+                        <input type="radio" name="animationType" id="staticMode" value="static" class="anim-radio" checked>
+                        <label for="staticMode" class="anim-option active">静态</label>
+                        
+                        <input type="radio" name="animationType" id="breathMode" value="breath" class="anim-radio">
+                        <label for="breathMode" class="anim-option">淡入呼吸</label>
+                        
+                        <input type="radio" name="animationType" id="floatMode" value="float" class="anim-radio">
+                        <label for="floatMode" class="anim-option">浮动韵律</label>
+                    </div>
+                </div>
+                <!-- 下载按钮 -->
+                <button class="btn-download" id="downloadBtn">
+                    ⬇️ 下载 SVG 文件
+                </button>
+            </form>
+        </div>
+    </div>
+    <!-- 脚注 wujunmin 超链接 -->
+    <footer>
+        <a href="https://junminwu.github.io" target="_blank">wujunmin</a>
+    </footer>
+</div>
+
+<script>
+    (function() {
+        "use strict";
+
+        // ----- 获取DOM元素  -----
+        const svg = document.getElementById('liveSvg');
+        const textInput = document.getElementById('watermarkText');
+        const fontSelect = document.getElementById('fontFamily');
+        const widthInput = document.getElementById('canvasWidth');
+        const heightInput = document.getElementById('canvasHeight');
+        const bgColorInput = document.getElementById('bgColor');
+        const textColorInput = document.getElementById('textColor');
+        const fontSizeInput = document.getElementById('fontSize');
+        const fontSizeVal = document.getElementById('fontSizeVal');
+        const opacityInput = document.getElementById('opacityRange');
+        const opacityValue = document.getElementById('opacityValue');
+        const rotateInput = document.getElementById('rotateAngle');
+        const rotateVal = document.getElementById('rotateVal');
+        const densityInput = document.getElementById('density');
+        const densityValue = document.getElementById('densityValue');
+        const densityLabel = document.getElementById('densityLabel');
+        
+        // 动画单选按钮
+        const staticRadio = document.getElementById('staticMode');
+        const breathRadio = document.getElementById('breathMode');
+        const floatRadio = document.getElementById('floatMode');
+        const animOptions = document.querySelectorAll('.anim-option');
+        
+        const dimIndicator = document.getElementById('dimension-indicator');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // 当前动画模式
+        let currentAnimMode = 'static'; 
+
+        // ----- 辅助函数 -----
+        function updateDensityLabel(value) {
+            densityValue.innerText = value + 'px';
+            if (value <= 60) densityLabel.innerText = '紧密';
+            else if (value <= 90) densityLabel.innerText = '中';
+            else if (value <= 120) densityLabel.innerText = '疏';
+            else densityLabel.innerText = '极疏';
+        }
+
+        function updateRotateLabel(val) {
+            rotateVal.innerText = val + '°';
+        }
+
+        function updateFontSizeLabel(val) {
+            fontSizeVal.innerText = val + 'px';
+        }
+
+        function updateOpacityLabel(val) {
+            opacityValue.innerText = parseFloat(val).toFixed(2);
+        }
+
+        function updateDimIndicator(w, h) {
+            dimIndicator.innerText = w + ' x ' + h;
+        }
+
+        // ----- 核心：生成带水印的SVG（三种动画: 无/呼吸/浮动）-----
+        function renderSVG() {
+            // 读取所有参数
+            let text = textInput.value.trim();
+            if (text === '') text = 'WATERMARK';
+
+            const fontFamily = fontSelect.value;
+            const canvasW = parseInt(widthInput.value, 10) || 800;
+            const canvasH = parseInt(heightInput.value, 10) || 600;
+            const bgColor = bgColorInput.value;
+            const textColor = textColorInput.value;
+            const fontSize = parseInt(fontSizeInput.value, 10) || 24;
+            const opacity = parseFloat(opacityInput.value) || 0.65;
+            const rotateAngle = parseInt(rotateInput.value, 10) || 45;
+            const densityStep = parseInt(densityInput.value, 10) || 90;
+
+            // 更新指示器
+            updateDimIndicator(canvasW, canvasH);
+            
+            // 动画模式
+            const isStatic = (currentAnimMode === 'static');
+            const isBreath = (currentAnimMode === 'breath');
+            const isFloat = (currentAnimMode === 'float');
+
+            // 设置SVG根属性
+            svg.setAttribute('width', canvasW);
+            svg.setAttribute('height', canvasH);
+            svg.setAttribute('viewBox', `0 0 ${canvasW} ${canvasH}`);
+            svg.style.backgroundColor = bgColor;
+
+            let svgContent = '';
+            // 背景矩形
+            svgContent += `<rect width="100%" height="100%" fill="${bgColor}" />`;
+
+            // 计算行列
+            const colCount = Math.ceil(canvasW / densityStep) + 1;
+            const rowCount = Math.ceil(canvasH / densityStep) + 1;
+            const startX = -densityStep * 0.2;
+            const startY = -densityStep * 0.2;
+
+            // 为每个水印生成带透明度、旋转、动画的SVG
+            for (let row = 0; row < rowCount; row++) {
+                for (let col = 0; col < colCount; col++) {
+                    const x = startX + col * densityStep;
+                    const y = startY + row * densityStep;
+                    
+                    // 基础fill: 加上透明度
+                    const fillColor = textColor; 
+                    // 使用rgba? 为了兼容性，在fill后面加上opacity属性（适用于单个text）
+                    // 也可在style中设置，但使用fill-opacity更标准
+                    
+                    // 根据不同动画模式生成不同动画效果
+                    // 所有模式下都添加透明度 fill-opacity
+                    
+                    // 1. 静态: 无动画，仅透明度
+                    if (isStatic) {
+                        const textElement = `<text x="${x}" y="${y}" 
+                                font-size="${fontSize}" 
+                                fill="${fillColor}" fill-opacity="${opacity}"
+                                font-family="${fontFamily}" 
+                                text-anchor="middle" dominant-baseline="middle" 
+                                transform="rotate(${rotateAngle}, ${x}, ${y})">
+                                ${text}
+                            </text>`;
+                        svgContent += textElement;
+                    }
+                    
+                    // 2. 淡入呼吸: 透明度周期性变化，所有水印整体呼吸感，每行略有延迟差
+                    else if (isBreath) {
+                        // 呼吸动画: 通过animate修改fill-opacity，从当前透明度到较低再回来，不同行延迟不同
+                        const baseDelay = (row * 0.2 + col * 0.1) % 1.2;
+                        const breathDuration = 2.4 + (row % 3) * 0.2;
+                        const minOpacity = Math.max(0.15, opacity * 0.4); // 呼吸最低不低于0.15
+                        const breathElement = `<text x="${x}" y="${y}" 
+                                font-size="${fontSize}" 
+                                fill="${fillColor}" fill-opacity="${opacity}"
+                                font-family="${fontFamily}" 
+                                text-anchor="middle" dominant-baseline="middle" 
+                                transform="rotate(${rotateAngle}, ${x}, ${y})">
+                                ${text}
+                                <animate attributeName="fill-opacity" 
+                                    values="${opacity};${minOpacity};${opacity}" 
+                                    dur="${breathDuration}s" 
+                                    begin="${baseDelay}s" 
+                                    repeatCount="indefinite" />
+                            </text>`;
+                        svgContent += breathElement;
+                    }
+                    
+                    // 3. 浮动韵律: 微小的上下浮动 + 透明度微变，形成轻盈韵律
+                    else if (isFloat) {
+                        // 使用animateTransform 做dy偏移，并且同时添加透明度动画
+                        const floatDelay = (row * 0.15 + col * 0.1) % 1.5;
+                        const floatDuration = 3.0 + (col % 4) * 0.2;
+                        const yOffset = 4; // 上下浮动4px
+                        // 为了同时旋转和平移动画，使用g包裹，添加两个动画
+                        const floatGroup = `<g transform="rotate(${rotateAngle}, ${x}, ${y})">
+                                <text x="${x}" y="${y}" 
+                                    font-size="${fontSize}" 
+                                    fill="${fillColor}" fill-opacity="${opacity}"
+                                    font-family="${fontFamily}" 
+                                    text-anchor="middle" dominant-baseline="middle">
+                                    ${text}
+                                </text>
+                                <animateTransform attributeName="transform" type="translate" 
+                                    from="0 0" to="0 ${yOffset}" 
+                                    dur="${floatDuration}s" 
+                                    begin="${floatDelay}s" 
+                                    repeatCount="indefinite" 
+                                    additive="sum" />
+                                <animate attributeName="fill-opacity" 
+                                    values="${opacity};${opacity*0.55};${opacity}" 
+                                    dur="${floatDuration*0.8}s" 
+                                    begin="${floatDelay}s" 
+                                    repeatCount="indefinite" />
+                            </g>`;
+                        svgContent += floatGroup;
+                    }
+                }
+            }
+
+            svg.innerHTML = svgContent;
+        }
+
+        // ----- 初始化UI交互监听 -----
+        function attachListeners() {
+            // 所有输入触发重新渲染
+            const inputs = [textInput, fontSelect, widthInput, heightInput, bgColorInput, textColorInput, fontSizeInput, rotateInput, densityInput, opacityInput];
+            inputs.forEach(input => input.addEventListener('input', function() {
+                if (input === fontSizeInput) updateFontSizeLabel(fontSizeInput.value);
+                if (input === rotateInput) updateRotateLabel(rotateInput.value);
+                if (input === densityInput) updateDensityLabel(densityInput.value);
+                if (input === opacityInput) updateOpacityLabel(opacityInput.value);
+                renderSVG();
+            }));
+
+            // 动画切换: 三种模式
+            function setActiveAnim(activeValue) {
+                animOptions.forEach(opt => opt.classList.remove('active'));
+                if (activeValue === 'static') {
+                    staticRadio.checked = true;
+                    animOptions[0].classList.add('active');
+                    currentAnimMode = 'static';
+                } else if (activeValue === 'breath') {
+                    breathRadio.checked = true;
+                    animOptions[1].classList.add('active');
+                    currentAnimMode = 'breath';
+                } else if (activeValue === 'float') {
+                    floatRadio.checked = true;
+                    animOptions[2].classList.add('active');
+                    currentAnimMode = 'float';
+                }
+                renderSVG();
+            }
+
+            staticRadio.addEventListener('change', function(e) {
+                if (staticRadio.checked) setActiveAnim('static');
+            });
+            breathRadio.addEventListener('change', function(e) {
+                if (breathRadio.checked) setActiveAnim('breath');
+            });
+            floatRadio.addEventListener('change', function(e) {
+                if (floatRadio.checked) setActiveAnim('float');
+            });
+
+            // 胶囊点击
+            animOptions[0].addEventListener('click', function() { setActiveAnim('static'); });
+            animOptions[1].addEventListener('click', function() { setActiveAnim('breath'); });
+            animOptions[2].addEventListener('click', function() { setActiveAnim('float'); });
+
+            // 尺寸变更同时更新指示
+            widthInput.addEventListener('change', function() { updateDimIndicator(widthInput.value, heightInput.value); renderSVG(); });
+            heightInput.addEventListener('change', function() { updateDimIndicator(widthInput.value, heightInput.value); renderSVG(); });
+
+            // 初始label
+            updateFontSizeLabel(fontSizeInput.value);
+            updateRotateLabel(rotateInput.value);
+            updateDensityLabel(densityInput.value);
+            updateOpacityLabel(opacityInput.value);
+            updateDimIndicator(widthInput.value, heightInput.value);
+        }
+
+        // ----- 下载SVG 保留所有动画及样式 -----
+        function downloadSVG() {
+            const serializer = new XMLSerializer();
+            let svgString = serializer.serializeToString(svg);
+            svgString = '<?xml version="1.0" encoding="UTF-8"?>\n' + svgString;
+            if (!svgString.includes('xmlns="http://www.w3.org/2000/svg"')) {
+                svgString = svgString.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+            const blob = new Blob([svgString], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'watermark.svg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        downloadBtn.addEventListener('click', downloadSVG);
+
+        window.onload = function() {
+            attachListeners();
+            renderSVG();
+        };
+    })();
+</script>
+
+</body>
+</html>

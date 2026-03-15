@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI SVG 空间规划 | wujunmin</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f3f5f9;
+            color: #1e293b;
+            line-height: 1.4;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 16px 20px 0 20px;
+        }
+
+        .app-header {
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .app-header h1 {
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+            margin-right: auto;
+        }
+
+        .import-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        .btn-primary {
+            background: #1e3a5f;
+            border-color: #1e3a5f;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #143048;
+            border-color: #143048;
+        }
+
+        .main-panel {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            min-height: 0;
+        }
+
+        /* 左侧画布区 */
+        .canvas-area {
+            flex: 2;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.02), 0 2px 6px rgba(0,20,40,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e9edf4;
+        }
+
+        .canvas-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid #edf2f7;
+            font-weight: 500;
+            background: #fafcff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            background: #e6edf6;
+            color: #1e3a5f;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            background: #f8fafd;
+            position: relative;
+            overflow: auto;
+            padding: 0;
+            display: block;
+        }
+
+        #svgCanvas {
+            display: block;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            border: 1px solid #dee5ed;
+            cursor: crosshair;
+            margin: 20px;
+            transform-origin: 0 0;
+            transition: transform 0.1s ease;
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 6px;
+            margin-left: 16px;
+        }
+        .zoom-btn {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            width: 32px;
+            height: 32px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .zoom-btn:hover {
+            background: #f1f5f9;
+        }
+        #zoomLevel {
+            min-width: 50px;
+            text-align: center;
+            font-size: 0.9rem;
+            align-self: center;
+        }
+
+        .status-bar {
+            padding: 8px 18px;
+            background: #f2f6fc;
+            color: #334155;
+            font-size: 0.85rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .transparency-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .transparency-control label {
+            font-size: 0.8rem;
+            color: #475569;
+        }
+        .transparency-control input {
+            width: 100px;
+        }
+
+        .hint-badge {
+            background: #e6edf6;
+            color: #1e3a5f;
+            padding: 2px 8px;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* 右侧面板 */
+        .paths-panel {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e9edf4;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 320px;
+        }
+
+        .panel-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid #edf2f7;
+            background: #fafcff;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .style-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            background: #f1f5f9;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 16px 8px 16px;
+        }
+
+        .style-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .style-item label {
+            font-size: 0.8rem;
+            color: #475569;
+            white-space: nowrap;
+        }
+
+        .style-item input[type="color"] {
+            width: 40px;
+            height: 30px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            background: white;
+        }
+
+        .style-item input[type="number"] {
+            width: 70px;
+            padding: 6px 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .style-item input[type="range"] {
+            width: 80px;
+        }
+
+        .style-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .path-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px 20px 16px;
+        }
+
+        .path-item {
+            background: #f9fbfe;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.1s;
+        }
+        .path-item.selected {
+            border: 2px solid #1e3a5f;
+            background: #f0f5ff;
+        }
+
+        .path-id-input {
+            flex: 2;
+            border: 1px solid #d1d9e6;
+            border-radius: 5px;
+            padding: 6px 8px;
+            font-size: 0.85rem;
+            background: white;
+        }
+        .path-id-input:focus {
+            border-color: #1e3a5f;
+            outline: none;
+        }
+
+        .path-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #64748b;
+            padding: 0 4px;
+            border-radius: 4px;
+        }
+        .icon-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .delete-btn {
+            color: #b91c1c;
+        }
+
+        .footer {
+            text-align: right;
+            padding: 12px 0 8px 0;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+        .footer a {
+            color: #1e3a5f;
+            text-decoration: none;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .download-group {
+            display: flex;
+            gap: 8px;
+            margin-right: 8px;
+            align-items: center;
+        }
+
+        .hint {
+            color: #5f6c80;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="app-header">
+            <h1>Power BI SVG 空间规划</h1>
+            <div class="import-group">
+                <button class="btn" id="importImageBtn">📁 导入底图</button>
+                <input type="file" id="fileInput" accept="image/*,.svg" style="display: none;">
+            </div>
+            <div class="download-group">
+                <button class="btn" id="downloadSvgOnly">下载路径SVG</button>
+                <button class="btn btn-primary" id="downloadSvgWithImage">下载底图+路径</button>
+                <label class="style-item" style="background: white; padding: 4px 8px; border-radius: 4px;">
+                    <input type="checkbox" id="showIdCheckbox" checked> 显示ID
+                </label>
+            </div>
+        </div>
+
+        <div class="main-panel">
+            <!-- 左侧 画布区 -->
+            <div class="canvas-area">
+                <div class="canvas-header">
+                    <span>🖱️ 单击加点 · 右键闭合路径 · <span class="hint-badge">Shift+单击 水平/垂直约束</span></span>
+                    <div style="display: flex; align-items: center;">
+                        <span class="badge" id="pointCount">0 个点</span>
+                        <div class="zoom-controls">
+                            <button class="zoom-btn" id="zoomOut">−</button>
+                            <span id="zoomLevel">100%</span>
+                            <button class="zoom-btn" id="zoomIn">+</button>
+                            <button class="zoom-btn" id="zoomReset">↺</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="canvas-wrapper" id="canvasWrapper">
+                    <svg id="svgCanvas" xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+                        <rect width="100%" height="100%" fill="white" />
+                        <g id="imageLayer"></g>
+                        <g id="pathLayer"></g>
+                        <g id="tempLayer"><!-- 用于临时连线 --></g>
+                        <g id="pointLayer"></g>
+                        <g id="textLayer"><!-- 用于显示ID文本 --></g>
+                    </svg>
+                </div>
+                <div class="status-bar">
+                    <span>⚪ 路径数: <span id="pathCounter">0</span></span>
+                    <span>🟦 单击加点 | 右键闭合 | 滚轮缩放 | Shift约束</span>
+                    <div class="transparency-control">
+                        <label>底图透明度</label>
+                        <input type="range" id="bgOpacity" min="0" max="1" step="0.05" value="1.0">
+                        <span id="opacityValue">100%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧 路径列表 + 样式控制 -->
+            <div class="paths-panel">
+                <div class="panel-header">
+                    <span>📋 区域列表</span>
+                    <button class="btn" id="cancelCurrentBtn" style="padding:4px 10px;">取消绘制</button>
+                </div>
+
+                <!-- 统一样式控制 (边框+填充) -->
+                <div class="style-controls">
+                    <div class="style-item">
+                        <label>边框</label>
+                        <input type="color" id="strokeColor" value="#1e3a5f">
+                    </div>
+                    <div class="style-item">
+                        <label>粗细</label>
+                        <input type="number" id="strokeWidth" min="0.5" max="10" step="0.5" value="2.0">
+                    </div>
+                    <div class="style-item">
+                        <label>填充</label>
+                        <input type="color" id="fillColor" value="#1e3a5f">
+                    </div>
+                    <div class="style-item">
+                        <label>透明度</label>
+                        <input type="range" id="fillOpacity" min="0" max="1" step="0.05" value="0.3">
+                        <span id="fillOpacityValue">0.30</span>
+                    </div>
+                </div>
+
+                <div class="path-list" id="pathListContainer">
+                    <div class="hint" style="padding:10px; text-align:center;">暂无路径，单击加点，右键闭合</div>
+                </div>
+
+                <div class="footer">
+                    <a href="https://junminwu.github.io" target="_blank">wujunmin</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // DOM 元素
+            const svg = document.getElementById('svgCanvas');
+            const imageLayer = document.getElementById('imageLayer');
+            const pathLayer = document.getElementById('pathLayer');
+            const tempLayer = document.getElementById('tempLayer');
+            const pointLayer = document.getElementById('pointLayer');
+            const textLayer = document.getElementById('textLayer');
+            const canvasWrapper = document.getElementById('canvasWrapper');
+
+            // 状态
+            let paths = [];                              // 已保存的路径 { id, points: [{x,y}] }
+            let currentPoints = [];                       // 当前正在绘制的点
+            let selectedPathIndex = -1;                    // 选中的路径索引
+            let backgroundImageData = null;                // { type, href/content, width, height }
+            let bgOpacity = 1.0;                            // 底图透明度
+            let originalImageWidth = 600;                   // 默认宽度
+            let originalImageHeight = 400;                  // 默认高度
+
+            // 拖拽相关
+            let draggingIndex = -1;
+
+            // 缩放相关
+            let currentZoom = 1.0;
+            const ZOOM_STEP = 0.2;
+            const MIN_ZOOM = 0.2;
+            const MAX_ZOOM = 3.0;
+
+            // Shift键状态
+            let shiftKeyPressed = false;
+
+            // 监听键盘事件
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Shift') {
+                    shiftKeyPressed = true;
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                if (e.key === 'Shift') {
+                    shiftKeyPressed = false;
+                }
+            });
+
+            // 使用DOMMatrix进行精确的坐标转换
+            function getMouseSVGPoint(event) {
+                // 创建一个SVG点
+                const point = svg.createSVGPoint();
+                point.x = event.clientX;
+                point.y = event.clientY;
+                
+                // 获取从屏幕坐标到SVG视图坐标的转换矩阵
+                const ctm = svg.getScreenCTM();
+                if (ctm) {
+                    // 反转矩阵，将屏幕坐标转换为SVG坐标
+                    const inverse = ctm.inverse();
+                    const svgPoint = point.matrixTransform(inverse);
+                    return {
+                        x: svgPoint.x,
+                        y: svgPoint.y
+                    };
+                }
+                return null;
+            }
+
+            // 应用Shift约束：如果Shift按下且有上一个点，则约束到水平或垂直
+            function applyShiftConstraint(point) {
+                if (!shiftKeyPressed || currentPoints.length === 0) {
+                    return point;
+                }
+
+                const lastPoint = currentPoints[currentPoints.length - 1];
+                const dx = Math.abs(point.x - lastPoint.x);
+                const dy = Math.abs(point.y - lastPoint.y);
+
+                // 如果水平距离大于垂直距离，保持y不变（水平移动）；否则保持x不变（垂直移动）
+                if (dx > dy) {
+                    // 水平约束：保持y坐标与上一个点相同
+                    return {
+                        x: point.x,
+                        y: lastPoint.y
+                    };
+                } else {
+                    // 垂直约束：保持x坐标与上一个点相同
+                    return {
+                        x: lastPoint.x,
+                        y: point.y
+                    };
+                }
+            }
+
+            // 计算路径的中心点用于放置ID文本
+            function getPathCenter(points) {
+                if (points.length === 0) return {x: 0, y: 0};
+                let sumX = 0, sumY = 0;
+                points.forEach(p => {
+                    sumX += p.x;
+                    sumY += p.y;
+                });
+                return {
+                    x: sumX / points.length,
+                    y: sumY / points.length
+                };
+            }
+
+            // 更新SVG的viewBox以适应原始图像尺寸
+            function updateSVGViewBox(width, height) {
+                if (width && height) {
+                    svg.setAttribute('width', width);
+                    svg.setAttribute('height', height);
+                    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+                    originalImageWidth = width;
+                    originalImageHeight = height;
+                }
+            }
+
+            // 更新SVG的尺寸以适应缩放
+            function updateSVGSize() {
+                // 设置SVG的实际像素尺寸为原始尺寸乘以缩放比例
+                // 这样滚动容器就能正确计算滚动范围
+                const scaledWidth = originalImageWidth * currentZoom;
+                const scaledHeight = originalImageHeight * currentZoom;
+                
+                // 临时保存当前的scroll位置比例
+                const scrollLeft = canvasWrapper.scrollLeft;
+                const scrollTop = canvasWrapper.scrollTop;
+                const maxScrollLeft = canvasWrapper.scrollWidth - canvasWrapper.clientWidth;
+                const maxScrollTop = canvasWrapper.scrollHeight - canvasWrapper.clientHeight;
+                
+                // 计算滚动位置比例
+                const scrollLeftRatio = maxScrollLeft > 0 ? scrollLeft / maxScrollLeft : 0;
+                const scrollTopRatio = maxScrollTop > 0 ? scrollTop / maxScrollTop : 0;
+                
+                // 更新SVG的width和height属性，而不是使用CSS transform
+                svg.setAttribute('width', scaledWidth);
+                svg.setAttribute('height', scaledHeight);
+                
+                // 移除CSS transform，因为我们现在通过改变实际尺寸来实现缩放
+                svg.style.transform = 'none';
+                
+                // 等待浏览器布局更新后，恢复滚动位置比例
+                setTimeout(() => {
+                    const newMaxScrollLeft = canvasWrapper.scrollWidth - canvasWrapper.clientWidth;
+                    const newMaxScrollTop = canvasWrapper.scrollHeight - canvasWrapper.clientHeight;
+                    
+                    canvasWrapper.scrollLeft = newMaxScrollLeft * scrollLeftRatio;
+                    canvasWrapper.scrollTop = newMaxScrollTop * scrollTopRatio;
+                }, 0);
+                
+                document.getElementById('zoomLevel').innerText = Math.round(currentZoom * 100) + '%';
+            }
+
+            // 渲染所有：路径 + 临时线 + 点 + ID文本
+            function renderAll() {
+                // 渲染已保存路径
+                pathLayer.innerHTML = '';
+                textLayer.innerHTML = '';
+                
+                const strokeColor = document.getElementById('strokeColor').value;
+                const strokeWidth = document.getElementById('strokeWidth').value;
+                const fillColor = document.getElementById('fillColor').value;
+                const fillOpacity = document.getElementById('fillOpacity').value;
+                const showId = document.getElementById('showIdCheckbox').checked;
+
+                paths.forEach((path, index) => {
+                    if (path.points.length < 2) return;
+                    let d = `M ${path.points[0].x} ${path.points[0].y}`;
+                    for (let i = 1; i < path.points.length; i++) {
+                        d += ` L ${path.points[i].x} ${path.points[i].y}`;
+                    }
+                    d += ' Z'; // 闭合
+
+                    const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    pathEl.setAttribute('d', d);
+                    pathEl.setAttribute('fill', fillColor);
+                    pathEl.setAttribute('fill-opacity', fillOpacity);
+                    pathEl.setAttribute('stroke', strokeColor);
+                    pathEl.setAttribute('stroke-width', strokeWidth);
+                    pathEl.setAttribute('data-path-index', index);
+                    pathEl.setAttribute('class', 'editable-path');
+                    if (index === selectedPathIndex) {
+                        pathEl.setAttribute('stroke-dasharray', '5,3');
+                    } else {
+                        pathEl.setAttribute('stroke-dasharray', 'none');
+                    }
+                    
+                    // 设置ID属性
+                    const pathId = path.id || `path_${index+1}`;
+                    pathEl.setAttribute('id', pathId);
+                    
+                    pathLayer.appendChild(pathEl);
+                    path.element = pathEl;
+
+                    // 渲染ID文本（如果开启显示）
+                    if (showId && path.points.length > 0) {
+                        const center = getPathCenter(path.points);
+                        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        text.setAttribute('x', center.x);
+                        text.setAttribute('y', center.y);
+                        text.setAttribute('text-anchor', 'middle');
+                        text.setAttribute('dominant-baseline', 'middle');
+                        text.setAttribute('font-size', '12');
+                        text.setAttribute('fill', '#1e3a5f');
+                        text.setAttribute('stroke', 'white');
+                        text.setAttribute('stroke-width', '0.5');
+                        text.setAttribute('data-path-index', index);
+                        text.textContent = pathId;
+                        textLayer.appendChild(text);
+                    }
+                });
+
+                // 渲染临时连线
+                tempLayer.innerHTML = '';
+                if (currentPoints.length >= 2) {
+                    const strokeColor = document.getElementById('strokeColor').value;
+                    const strokeWidth = document.getElementById('strokeWidth').value;
+                    let d = `M ${currentPoints[0].x} ${currentPoints[0].y}`;
+                    for (let i = 1; i < currentPoints.length; i++) {
+                        d += ` L ${currentPoints[i].x} ${currentPoints[i].y}`;
+                    }
+                    const tempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    tempPath.setAttribute('d', d);
+                    tempPath.setAttribute('fill', 'none');
+                    tempPath.setAttribute('stroke', strokeColor);
+                    tempPath.setAttribute('stroke-width', strokeWidth);
+                    tempPath.setAttribute('stroke-dasharray', '5,3');
+                    tempPath.setAttribute('opacity', '0.8');
+                    tempLayer.appendChild(tempPath);
+                }
+
+                // 渲染点 (可拖拽)
+                pointLayer.innerHTML = '';
+                currentPoints.forEach((p, idx) => {
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', p.x);
+                    circle.setAttribute('cy', p.y);
+                    circle.setAttribute('r', 5);
+                    circle.setAttribute('fill', '#1e3a5f');
+                    circle.setAttribute('stroke', 'white');
+                    circle.setAttribute('stroke-width', '2');
+                    circle.setAttribute('data-point-index', idx);
+                    circle.setAttribute('class', 'draggable-point');
+                    pointLayer.appendChild(circle);
+                });
+
+                document.getElementById('pointCount').innerText = currentPoints.length + ' 个点';
+                document.getElementById('pathCounter').innerText = paths.length;
+                attachDragEvents();
+                updatePathListUI();
+            }
+
+            // 为点绑定拖拽事件
+            function attachDragEvents() {
+                const circles = pointLayer.querySelectorAll('circle');
+                circles.forEach(circle => {
+                    circle.addEventListener('mousedown', startDragPoint);
+                });
+            }
+
+            function startDragPoint(e) {
+                e.preventDefault();
+                const circle = e.target;
+                const idx = circle.getAttribute('data-point-index');
+                if (idx !== null) {
+                    draggingIndex = parseInt(idx, 10);
+                    document.addEventListener('mousemove', onDragMove);
+                    document.addEventListener('mouseup', stopDrag);
+                }
+            }
+
+            function onDragMove(e) {
+                if (draggingIndex === -1) return;
+                const svgPoint = getMouseSVGPoint(e);
+                if (!svgPoint) return;
+
+                // 更新当前点坐标
+                if (draggingIndex < currentPoints.length) {
+                    currentPoints[draggingIndex].x = svgPoint.x;
+                    currentPoints[draggingIndex].y = svgPoint.y;
+                }
+                renderAll();
+            }
+
+            function stopDrag() {
+                draggingIndex = -1;
+                document.removeEventListener('mousemove', onDragMove);
+                document.removeEventListener('mouseup', stopDrag);
+            }
+
+            // 完成当前路径：保存到paths
+            function finishCurrentPath() {
+                if (currentPoints.length < 2) {
+                    alert('至少需要两个点才能生成路径');
+                    return false;
+                }
+                const newPath = {
+                    id: `path_${paths.length+1}`,
+                    points: currentPoints.map(p => ({x: p.x, y: p.y})),
+                };
+                paths.push(newPath);
+                currentPoints = [];
+                renderAll();
+                return true;
+            }
+
+            // 处理画布点击：加点
+            function handleCanvasClick(e) {
+                // 忽略右键点击
+                if (e.button === 2) return;
+                
+                const svgPoint = getMouseSVGPoint(e);
+                if (!svgPoint) return;
+
+                // 应用Shift约束
+                const constrainedPoint = applyShiftConstraint(svgPoint);
+                
+                currentPoints.push(constrainedPoint);
+                renderAll();
+            }
+
+            // 处理右键：完成路径
+            function handleCanvasRightClick(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                finishCurrentPath();
+            }
+
+            // 绑定事件
+            svg.addEventListener('click', handleCanvasClick);
+            svg.addEventListener('contextmenu', handleCanvasRightClick);
+
+            // 导入图片
+            document.getElementById('importImageBtn').addEventListener('click', ()=>{
+                document.getElementById('fileInput').click();
+            });
+
+            document.getElementById('fileInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                if (file.type.startsWith('image/')) {
+                    // 对于像素图片，先获取原始尺寸
+                    const img = new Image();
+                    img.onload = () => {
+                        updateSVGViewBox(img.width, img.height);
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            setBackgroundImage(event.target.result, 'raster', img.width, img.height);
+                        };
+                        reader.readAsDataURL(file);
+                    };
+                    img.src = URL.createObjectURL(file);
+                } else if (file.name.endsWith('.svg')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const svgText = event.target.result;
+                        // 解析SVG获取宽高
+                        const parser = new DOMParser();
+                        const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+                        const svgElement = svgDoc.documentElement;
+                        let width = 600, height = 400;
+                        
+                        if (svgElement.hasAttribute('width') && svgElement.hasAttribute('height')) {
+                            width = parseFloat(svgElement.getAttribute('width')) || 600;
+                            height = parseFloat(svgElement.getAttribute('height')) || 400;
+                        } else if (svgElement.hasAttribute('viewBox')) {
+                            const viewBox = svgElement.getAttribute('viewBox').split(' ').map(Number);
+                            if (viewBox.length === 4) {
+                                width = viewBox[2];
+                                height = viewBox[3];
+                            }
+                        }
+                        updateSVGViewBox(width, height);
+                        setBackgroundImage(svgText, 'svg', width, height);
+                    };
+                    reader.readAsText(file);
+                }
+            });
+
+            function setBackgroundImage(content, type, width, height) {
+                imageLayer.innerHTML = '';
+                
+                if (type === 'raster') {
+                    const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                    img.setAttribute('href', content);
+                    img.setAttribute('width', width || 600);
+                    img.setAttribute('height', height || 400);
+                    img.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                    img.setAttribute('opacity', bgOpacity);
+                    imageLayer.appendChild(img);
+                    backgroundImageData = { 
+                        type: 'raster', 
+                        href: content,
+                        width: width || 600,
+                        height: height || 400
+                    };
+                } else {
+                    const parser = new DOMParser();
+                    const svgDoc = parser.parseFromString(content, 'image/svg+xml');
+                    const importedSvg = svgDoc.documentElement;
+                    // 直接导入SVG元素
+                    for (let child of Array.from(importedSvg.childNodes)) {
+                        if (child.nodeType === 1) {
+                            const cloned = child.cloneNode(true);
+                            cloned.setAttribute('opacity', bgOpacity);
+                            imageLayer.appendChild(cloned);
+                        }
+                    }
+                    backgroundImageData = { 
+                        type: 'svg', 
+                        content: content,
+                        width: width || 600,
+                        height: height || 400
+                    };
+                }
+                
+                // 更新SVG尺寸以匹配新图像
+                updateSVGSize();
+            }
+
+            // 透明度滑块
+            const opacitySlider = document.getElementById('bgOpacity');
+            const opacitySpan = document.getElementById('opacityValue');
+            opacitySlider.addEventListener('input', function() {
+                bgOpacity = parseFloat(this.value);
+                opacitySpan.innerText = Math.round(bgOpacity * 100) + '%';
+                const imageChildren = imageLayer.children;
+                for (let el of imageChildren) {
+                    el.setAttribute('opacity', bgOpacity);
+                }
+            });
+
+            // 填充透明度显示
+            const fillOpacitySlider = document.getElementById('fillOpacity');
+            const fillOpacitySpan = document.getElementById('fillOpacityValue');
+            fillOpacitySlider.addEventListener('input', function() {
+                fillOpacitySpan.innerText = parseFloat(this.value).toFixed(2);
+                renderAll();
+            });
+
+            // 显示ID复选框
+            document.getElementById('showIdCheckbox').addEventListener('change', function() {
+                renderAll();
+            });
+
+            // 取消当前绘制
+            document.getElementById('cancelCurrentBtn').addEventListener('click', ()=>{
+                currentPoints = [];
+                renderAll();
+            });
+
+            // 右侧列表交互
+            function updatePathListUI() {
+                const container = document.getElementById('pathListContainer');
+                if (paths.length === 0) {
+                    container.innerHTML = '<div class="hint" style="padding:10px; text-align:center;">暂无路径，单击加点，右键闭合</div>';
+                    return;
+                }
+                let html = '';
+                paths.forEach((p, i) => {
+                    html += `
+                        <div class="path-item ${i === selectedPathIndex ? 'selected' : ''}" data-list-index="${i}">
+                            <input type="text" class="path-id-input" value="${p.id || 'path_' + (i+1)}" placeholder="ID" data-index="${i}">
+                            <div class="path-actions">
+                                <button class="icon-btn edit-points-btn" title="编辑此路径的点" data-index="${i}">✎</button>
+                                <button class="icon-btn delete-btn" title="删除路径" data-index="${i}">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+
+                document.querySelectorAll('.path-id-input').forEach(input => {
+                    input.addEventListener('change', function(e) {
+                        const idx = this.dataset.index;
+                        if (paths[idx]) {
+                            paths[idx].id = this.value;
+                            renderAll(); // 立即重新渲染以更新ID显示
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const idx = this.dataset.index;
+                        deletePathByIndex(idx);
+                    });
+                });
+
+                document.querySelectorAll('.edit-points-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const idx = this.dataset.index;
+                        loadPathPointsForEditing(idx);
+                    });
+                });
+
+                document.querySelectorAll('.path-item').forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+                        const idx = this.dataset.listIndex;
+                        if (idx !== undefined) {
+                            selectedPathIndex = parseInt(idx, 10);
+                            renderAll();
+                        }
+                    });
+                });
+            }
+
+            function deletePathByIndex(idx) {
+                if (idx >= 0 && idx < paths.length) {
+                    paths.splice(idx, 1);
+                    if (selectedPathIndex === idx) selectedPathIndex = -1;
+                    else if (selectedPathIndex > idx) selectedPathIndex--;
+                    renderAll();
+                }
+            }
+
+            function loadPathPointsForEditing(idx) {
+                if (!paths[idx]) return;
+                currentPoints = paths[idx].points.map(p => ({x: p.x, y: p.y}));
+                paths.splice(idx, 1);
+                selectedPathIndex = -1;
+                renderAll();
+            }
+
+            // 样式变化重新渲染
+            document.getElementById('strokeColor').addEventListener('input', renderAll);
+            document.getElementById('strokeWidth').addEventListener('input', renderAll);
+            document.getElementById('fillColor').addEventListener('input', renderAll);
+            document.getElementById('fillOpacity').addEventListener('input', renderAll);
+
+            // 缩放功能 - 通过改变SVG的实际尺寸来实现
+            function updateZoom() {
+                updateSVGSize();
+            }
+
+            document.getElementById('zoomIn').addEventListener('click', () => {
+                currentZoom = Math.min(currentZoom + ZOOM_STEP, MAX_ZOOM);
+                updateZoom();
+            });
+
+            document.getElementById('zoomOut').addEventListener('click', () => {
+                currentZoom = Math.max(currentZoom - ZOOM_STEP, MIN_ZOOM);
+                updateZoom();
+            });
+
+            document.getElementById('zoomReset').addEventListener('click', () => {
+                currentZoom = 1.0;
+                updateZoom();
+            });
+
+            // 滚轮缩放
+            canvasWrapper.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+                currentZoom = Math.min(Math.max(currentZoom + delta, MIN_ZOOM), MAX_ZOOM);
+                updateZoom();
+            });
+
+            // 下载
+            document.getElementById('downloadSvgOnly').addEventListener('click', ()=>{
+                downloadSVG(false);
+            });
+
+            document.getElementById('downloadSvgWithImage').addEventListener('click', ()=>{
+                downloadSVG(true);
+            });
+
+            function downloadSVG(includeImage) {
+                // 创建一个新的SVG文档，不使用克隆的方式以避免复制g标签
+                const svgNS = "http://www.w3.org/2000/svg";
+                const newSvg = document.createElementNS(svgNS, "svg");
+                
+                // 设置正确的宽高和viewBox（使用原始尺寸，不包含缩放）
+                const width = backgroundImageData ? backgroundImageData.width : originalImageWidth;
+                const height = backgroundImageData ? backgroundImageData.height : originalImageHeight;
+                newSvg.setAttribute("width", width);
+                newSvg.setAttribute("height", height);
+                newSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+                newSvg.setAttribute("xmlns", svgNS);
+
+                // 添加白色背景
+                const rect = document.createElementNS(svgNS, "rect");
+                rect.setAttribute("width", "100%");
+                rect.setAttribute("height", "100%");
+                rect.setAttribute("fill", "white");
+                newSvg.appendChild(rect);
+
+                // 添加底图（如果需要）
+                if (includeImage && backgroundImageData) {
+                    if (backgroundImageData.type === 'raster') {
+                        const img = document.createElementNS(svgNS, "image");
+                        img.setAttribute("href", backgroundImageData.href);
+                        img.setAttribute("width", width);
+                        img.setAttribute("height", height);
+                        img.setAttribute("preserveAspectRatio", "xMidYMid meet");
+                        img.setAttribute("opacity", bgOpacity);
+                        newSvg.appendChild(img);
+                    } else {
+                        // 对于SVG底图，解析并添加其子元素
+                        const parser = new DOMParser();
+                        const svgDoc = parser.parseFromString(backgroundImageData.content, 'image/svg+xml');
+                        const importedSvg = svgDoc.documentElement;
+                        for (let child of Array.from(importedSvg.childNodes)) {
+                            if (child.nodeType === 1) {
+                                const cloned = child.cloneNode(true);
+                                cloned.setAttribute("opacity", bgOpacity);
+                                newSvg.appendChild(cloned);
+                            }
+                        }
+                    }
+                }
+
+                // 获取当前样式
+                const strokeColor = document.getElementById('strokeColor').value;
+                const strokeWidth = document.getElementById('strokeWidth').value;
+                const fillColor = document.getElementById('fillColor').value;
+                const fillOpacity = document.getElementById('fillOpacity').value;
+                const showId = document.getElementById('showIdCheckbox').checked;
+
+                // 添加所有路径
+                paths.forEach((path, index) => {
+                    if (path.points.length < 2) return;
+                    
+                    // 构建路径d属性
+                    let d = `M ${path.points[0].x} ${path.points[0].y}`;
+                    for (let i = 1; i < path.points.length; i++) {
+                        d += ` L ${path.points[i].x} ${path.points[i].y}`;
+                    }
+                    d += ' Z';
+
+                    const pathEl = document.createElementNS(svgNS, "path");
+                    pathEl.setAttribute("d", d);
+                    pathEl.setAttribute("fill", fillColor);
+                    pathEl.setAttribute("fill-opacity", fillOpacity);
+                    pathEl.setAttribute("stroke", strokeColor);
+                    pathEl.setAttribute("stroke-width", strokeWidth);
+                    
+                    // 设置ID
+                    const pathId = path.id || `path_${index+1}`;
+                    pathEl.setAttribute("id", pathId);
+                    
+                    newSvg.appendChild(pathEl);
+
+                    // 添加ID文本（如果需要）
+                    if (showId && path.points.length > 0) {
+                        const center = getPathCenter(path.points);
+                        const text = document.createElementNS(svgNS, "text");
+                        text.setAttribute("x", center.x);
+                        text.setAttribute("y", center.y);
+                        text.setAttribute("text-anchor", "middle");
+                        text.setAttribute("dominant-baseline", "middle");
+                        text.setAttribute("font-size", "12");
+                        text.setAttribute("fill", "#1e3a5f");
+                        text.setAttribute("stroke", "white");
+                        text.setAttribute("stroke-width", "0.5");
+                        text.textContent = pathId;
+                        newSvg.appendChild(text);
+                    }
+                });
+
+                // 序列化并下载
+                const serializer = new XMLSerializer();
+                let source = serializer.serializeToString(newSvg);
+                const svgBlob = new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + source], {type: 'image/svg+xml'});
+                const url = URL.createObjectURL(svgBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = includeImage ? 'canvas_with_bg.svg' : 'paths_only.svg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // 初始化
+            renderAll();
+            updateSVGSize(); // 初始化缩放
+        })();
+    </script>
+</body>
+</html>
